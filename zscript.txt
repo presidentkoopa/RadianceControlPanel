@@ -1,0 +1,43 @@
+version "4.11"
+
+// SDF/MSDF shader-interaction ZScript, moved from the engine (wadsrc/static/zscript/ui) so they
+// can be iterated on without touching DOOM_FRESH. These only drive the native msdf_enabled/
+// msdf_color/msdf_glitch Actor fields and the VRDM/SIGL/SDFG sprites -- the shader .fp files, the
+// native fields themselves, and the gldefs.txt HardwareShader bindings still live in the engine.
+#include "zscript/radiance/vr_damage_counters.zs"
+#include "zscript/radiance/vr_sdf_procedural.zs"
+#include "zscript/radiance/sdf_gif_entity.zs"
+#include "zscript/radiance/vr_sdf_combos.zs"
+
+// Core Radiance / GITD Logic
+#include "zscript/radiance/gitd_glow.zs"
+#include "zscript/radiance/gitd_dark.zs"
+#include "zscript/radiance/gitd_bloom.zs"
+#include "zscript/radiance/gitd_shaderbridge.zs"
+#include "zscript/radiance/gitd_sdfmonster.zs"
+#include "zscript/radiance/gitd_junkerscan.zs"
+#include "zscript/radiance/gitd3_deathfx.zs"
+#include "zscript/radiance/gitd_presets.zs"
+#include "zscript/radiance/gitd_muzzle.zs"
+#include "zscript/radiance/gitd_flatglow.zs"
+#include "zscript/radiance/gitd_gallery.zs"
+#include "zscript/radiance/gitd_combo.zs"
+#include "zscript/radiance/gitd_scoreburst.zs"
+#include "zscript/radiance/gitd_dampop.zs"
+#include "zscript/radiance/gitd_brand.zs"
+#include "zscript/radiance/gitd_brassstorm.zs"
+#include "zscript/radiance/gitd_buckshot.zs"
+#include "zscript/radiance/gitd_hud.zs"
+
+// The Graveyard (Persistence)
+#include "zscript/radiance/gy_Stone.zs"
+#include "zscript/radiance/gy_EventHandler.zs"
+#include "zscript/radiance/gy_Storage.zs"
+#include "zscript/radiance/gy_Death.zs"
+#include "zscript/radiance/gy_VmAbortHandler.zs"
+
+// Global blackout / neon-outline toggle
+#include "zscript/engine/vr_blackout.zs"
+
+// v0.8 Control Panel Logic (Presets & Menu Sync)
+#include "zscript/radiance/radiance_control.zs"

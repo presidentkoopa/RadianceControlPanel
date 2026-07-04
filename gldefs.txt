@@ -1,0 +1,26 @@
+// ================================================================
+// Radiance Control Panel -- BloomBoost pre/post shaders. Extracted
+// verbatim from engine gldefs.txt. NOTE: brightmaps/sprites/doom.bm
+// and doom2.bm ("Radiance Brightmaps") were deliberately LEFT in the
+// engine core -- they're vanilla monster-sprite fullbright detail
+// textures, not glow-in-the-dark effect content, and moving them
+// would change default rendering even without this mod loaded.
+// ================================================================
+
+// --- Radiance BloomBoost ---
+HardwareShader PostProcess beforebloom
+{
+	Name "BloomBoostPre"
+	Shader "shaders/radiance/gitd_bloomboost_pre.fp" 330
+	Uniform float gamma
+	Uniform float contrast
+	Uniform float brightness
+}
+HardwareShader PostProcess scene
+{
+	Name "BloomBoostPost"
+	Shader "shaders/radiance/gitd_bloomboost_post.fp" 330
+	Uniform float gamma
+	Uniform float contrast
+	Uniform float brightness
+}
