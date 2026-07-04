@@ -15,8 +15,12 @@ Two related resources keep their own jobs:
 The economy is what makes the 90 gestures legible — you grow into a handful, you don't
 receive a manual ([03](03_gesture-system.md)):
 
+- **Abilities** (the wrist-slot loadout): the 6 wrist hardpoints ([12](12_hardpoint-map.md))
+  are **buyable, assignable equip-slots** — the shop sells a pool (grav panels, jump-jets,
+  + more), you assign three-per-hand and swap the loadout. This is the cleanest gold sink:
+  a growing ability pool, three-per-hand at a time.
 - **Tools** (the big purchases): whip, sword, shieldsaw, ice hooks. Buying a tool unlocks
-  its whole gesture branch.
+  its whole gesture branch. (Tools holster; abilities slot to the wrist — see [12](12_hardpoint-map.md).)
 - **Moves** (the cheap deepening): individual gestures on a tool you already own —
   *Lasso Wind-Up* on the whip, *Cylinder Flick Reload* on the revolver.
 - (Optional) **Empowered big-gun modes** — the BFG drops free, but the overhead

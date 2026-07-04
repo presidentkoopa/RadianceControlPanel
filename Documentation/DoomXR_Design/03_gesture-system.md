@@ -44,6 +44,11 @@ Signals available: `GetHandVelocity(hand)` (per-tick linear velocity), the offha
 orientation set (`OffhandPos/Dir/Pitch/Angle/Roll`), the grip-intent arbiter
 (`VR_GetGripOwner`), and haptics (`VR_HapticPulse`). See [09](09_engine-seams.md).
 
+> **How this is actually built:** gestures are not hand-coded one at a time. A native
+> engine detects them from a declarative `vr_gestures.json`; ZScript does the effects.
+> This is the anti-piecemeal architecture — see **[11 — the gesture engine](11_gesture-engine.md)**.
+> Where each gesture physically lives on the body is **[12 — the hardpoint map](12_hardpoint-map.md)**.
+
 ## Two design rules every gesture must pass
 
 Surfaced by the catalog's critique pass; both are visible per-card in the HTML catalog:

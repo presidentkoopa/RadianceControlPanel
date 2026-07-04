@@ -29,6 +29,10 @@ your loot chase, and your gunfighting dialect. Crucially:
 > with gold* is an economy decision — see [07](07_economy-shop.md). The lean version:
 > spawn with fists + class frames, buy the rest.
 
+> **Where it all physically lives** (guns cycle, tools holster, abilities slot to the
+> wrist, shieldsaw is a gesture) is the full **[12 — hardpoint & loadout map](12_hardpoint-map.md)**.
+> Guns notably do **not** holster — a class is ~3 frames on next/prev cycle.
+
 ## Vanilla+ (the default class)
 
 The classic reliable set: full arsenal across all slots, **modified by cvars** — e.g. a

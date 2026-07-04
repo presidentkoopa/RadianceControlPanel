@@ -15,6 +15,25 @@ imprints — and **90 physical VR gestures** are the skilled input that drives a
 > this document describes DoomXR's *own* native design, not a port. Where a proven
 > pattern exists, it's named as a pattern, not lifted.
 
+## Vision at a glance (the whole thing, compressed)
+
+- **You play Doom.** Guns are normal pickups; a class is ~3 frames of one gun you cycle
+  and level via loot imprints. BFG/rockets/plasma/chainsaw drop like always.
+- **Your hands are the game.** ~90 VR gestures — how you kill, reload, finish, block,
+  traverse — are the skilled input. They feed four "brains": the **combo chain**, the
+  **crit/locational** layer, the **difficulty director**, and the **gold economy**.
+- **You buy your art.** Gestures aren't handed over — you spawn with fists + class frames
+  and **buy tools and moves with gold**. The 90 is shop stock, not a manual; you only ever
+  hold the handful you chose.
+- **Gestures run on one engine.** A native C++ detector reads a declarative
+  `vr_gestures.json`; ZScript does the effects; an HTML editor authors the JSON (later).
+  Build the engine, not 90 gestures.
+- **The body is the interface.** 6 wrist ability slots (buyable/assignable), 4 utility
+  tool holsters, a chest reload pouch, a belt grenade, and a gesture-summoned shieldsaw.
+- **Skill escalates the game.** Dominating summons the difficulty director's bullet-time
+  set-pieces — the arena where your bought gestures pay off. Getting good makes the game
+  *bigger*, not emptier.
+
 ## Read in this order
 
 1. [Core loop](01_core-loop.md) — the whole game on one page.
@@ -27,6 +46,8 @@ imprints — and **90 physical VR gestures** are the skilled input that drives a
 8. [Encounter spikes](08_encounter-spikes.md) — captains, elites, curse tokens.
 9. [Engine seams](09_engine-seams.md) — the native hooks this design needs (exists vs. proposed).
 10. [Open questions](10_open-questions.md) — every unresolved fork, in one place.
+11. [The gesture engine](11_gesture-engine.md) — **native C++ + `vr_gestures.json` + HTML editor.** The architecture.
+12. [The hardpoint & loadout map](12_hardpoint-map.md) — wrist ability slots, tool holsters, the shieldsaw, the re-seed spec.
 
 ## The gesture catalog (companion)
 
