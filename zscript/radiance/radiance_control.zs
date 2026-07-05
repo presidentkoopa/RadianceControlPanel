@@ -81,5 +81,5 @@ class RadianceControlHandler : EventHandler
     void SetCVarBool(string name, bool val) { let cv = CVar.GetCVar(name, players[consoleplayer]); if(cv) cv.SetBool(val); }
     void SetCVarInt(string name, int val) { let cv = CVar.GetCVar(name, players[consoleplayer]); if(cv) cv.SetInt(val); }
     void SetCVarFloat(string name, float val) { let cv = CVar.GetCVar(name, players[consoleplayer]); if(cv) cv.SetFloat(val); }
-    void SetCVarColor(string name, color val) { let cv = CVar.GetCVar(name, players[consoleplayer]); if(cv) cv.SetColor(val); }
+    void SetCVarColor(string name, color val) { let cv = CVar.GetCVar(name, players[consoleplayer]); if(cv) cv.SetInt(val); }
 }
