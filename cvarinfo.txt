@@ -1,1 +1,174 @@
+// ================================================================
+// Radiance Control Panel -- standalone RADIANCE/glow-in-the-dark mod.
+// Extracted verbatim from DoomXR engine CVARINFO (defaults preserved
+// exactly) so it moves as a loadable pk3 alongside doomxr.pk3.
+// ================================================================
 
+user int   ddz_fog       = 0;
+user bool  ddz_lighting  = false;
+user int   ddz_minlight  = 0;
+user int   ddz_mode      = 0;
+user int   ddz_postgain  = 0;
+user int   ddz_pregain   = 0;
+user int   ddz_preset    = 3;
+user float ddz_skymode   = 1.0;
+user bool  radiance_blend_enabled    = false;
+user float radiance_blend_rate       = 0.15;
+user bool    radiance_bloom               = true;
+user float   radiance_bloom_react_amt     = 0.35;
+user float   radiance_bloom_react_speed   = 0.15;
+user bool    radiance_bloom_reactive      = true;
+user float   radiance_bloom_strength      = 1.0;
+user float   radiance_bloomboost_brightness = 15.0;
+user float   radiance_bloomboost_contrast = 140.0;
+user float   radiance_bloomboost_gamma    = 1.0;
+user color radiance_ceil_color       = "30 30 30";
+user bool  radiance_ceil_enabled     = true;
+user float radiance_ceil_height      = 64.0;
+user float radiance_ceil_intensity   = 1.0;
+user int   radiance_ceil_mode        = 2;
+user float radiance_ceil_speed       = 0.5;
+server int   radiance_combo_color   = 1;
+server bool  radiance_combo_enabled = true;
+server int   radiance_combo_fade    = 70;
+server float radiance_combo_radius  = 56.0;
+server float radiance_combo_scoremul= 1.0;
+server int   radiance_combo_style   = 0;
+server int   radiance_combo_target  = 0;
+server color radiance_damage_numbers_color = "white";
+server int   radiance_damage_numbers_mode = 0;
+user int   radiance_damage_numbers_style = 0;
+server int   radiance_damage_numbers_window = 15;
+server int radiance_death_accent=0;
+server color radiance_death_color="00 c8 ff";
+server int radiance_death_color_mode=0;
+user bool radiance_death_enabled = true;
+server int radiance_death_grad=0;
+server color radiance_death_grad_color="ff 20 00";
+server float radiance_death_intensity=1.0;
+server int radiance_death_persist=0;
+server int radiance_death_planes=0;
+server int radiance_death_pulse=0;
+server float radiance_death_pulse_depth=0.5;
+server float radiance_death_pulse_speed=2.0;
+server int radiance_death_style=0;
+user int   radiance_flashlight_attach = 0;
+user color radiance_flashlight_color = "ff ff ff";
+user float radiance_flashlight_complexity = 1.0;
+user float radiance_flashlight_intensity = 1.0;
+user int   radiance_flashlight_mode  = 0;
+server bool radiance_flashlight_on = false;
+server float radiance_flatglow_cull   = 900.0;
+server int   radiance_flatglow_max    = 14;
+server float radiance_flatglow_radius = 128.0;
+user color radiance_floor_color      = "ff b0 28";
+user bool  radiance_floor_enabled    = true;
+user float radiance_floor_height     = 64.0;
+user float radiance_floor_intensity  = 1.0;
+user int   radiance_floor_mode       = 1;
+user float radiance_floor_speed      = 1.0;
+user bool  radiance_glow_enabled     = false;
+server bool radiance_heatmap=false;
+server int  radiance_heatmap_budget=10;
+server int radiance_hitlight=0;
+server int radiance_hitlight_size=140;
+server int radiance_impact_max=14;
+server int radiance_impact_size=96;
+server int radiance_impact_style=1;
+server int radiance_impactspark=0;
+user float radiance_junker_bracket_size = 0.30;
+user bool  radiance_junker_demo       = true;
+user float radiance_junker_dist        = 96.0;
+user bool  radiance_junker_enabled    = true;
+user int   radiance_junker_grantedtime = 35;
+user int   radiance_junker_loopgap     = 70;
+user float radiance_junker_score  = 13370.0;
+user float radiance_junker_skullradius = 30.0;
+user float radiance_junker_skulltime  = 28.0;
+user float radiance_junker_smoke_billow = 1.0;
+user float radiance_junker_sp_height = 1.0;
+user float radiance_junker_sp_speed  = 1.0;
+user int   radiance_junker_synctime   = 30;
+user float radiance_junker_threat = 42.0;
+user float radiance_junker_vitals = 87.0;
+user float radiance_junker_wf_amp    = 1.0;
+user float radiance_junker_wf_freq   = 1.0;
+server bool radiance_kill_billboard=true;
+server int radiance_kill_color=0;
+server int radiance_kill_count_mode=0;
+server int radiance_kill_milestone=25;
+server int radiance_kill_window=90;
+server bool radiance_killcounter=false;
+user color radiance_wall_color       = "ff b0 28";
+user bool  radiance_wall_enabled     = true;
+user float radiance_wall_height      = 64.0;
+user float radiance_wall_intensity   = 1.0;
+user int   radiance_wall_mode        = 0;
+server int radiance_wall_pattern=0;
+user float radiance_wall_speed       = 1.0;
+user bool   gy_anim_enabled   = true;
+user float  gy_bounce_amount  = 0.06;
+user float  gy_bounce_speed   = 6.0;
+user bool   gy_enabled        = true;
+server string gy_hashes = "";
+user int    gy_light_bright   = 95;
+user int    gy_light_cull     = 512;
+user bool   gy_light_enabled  = true;
+user bool   gy_light_flicker  = true;
+user int    gy_light_radius   = 104;
+server string gy_locations = "";
+user int    gy_marker_type    = 0;
+server string gy_obituaries = "";
+user bool   gy_popin_enabled  = true;
+user bool   gy_sdf_enabled    = true;
+user float  gy_sdf_glow       = 1.0;
+user float  gy_sdf_shiver     = 0.2;
+user color hf_glow_color_ceil  = "30 30 30";
+user color hf_glow_color_floor = "ff b0 28";
+user bool  hf_glow_killstreak = false;
+user int   hf_glow_ks_max = 10;
+user float hf_glow_ks_radius = 256.0;
+user int   hf_glow_ks_window = 105;
+user bool  hf_glow_liquid_priority = true;
+user bool  hf_glow_random      = false;
+user int   hf_glow_random_mode    = 0;
+user int   hf_glow_random_palette = 0;
+user int   hf_glow_random_rate = 0;
+server bool hf_impact_double=false;
+server int hf_impact_intensity=1;
+user bool vr_blackout_mode = false;
+
+// v0.8 Control Panel Logic (radiance_control.zs preset bridge)
+user int rad_preset = 0;
+
+// --- Menu rows found referencing these, but NEVER DECLARED ANYWHERE in the engine (a
+// pre-existing gap, not introduced by this extraction -- these menu rows have always been
+// dead/no-op). Declared here with neutral defaults matched to each cvar's closest sibling
+// already live in this file (e.g. hf_glow_height mirrors radiance_floor_height=64), NOT balance
+// choices -- just making the control functional instead of permanently broken. Retune freely.
+user float radiance_death_size = 128.0;
+user bool  radiance_flatglow = true;
+user bool  radiance_muzzle_chaingun_strobe = true;
+user bool  radiance_muzzle_lights = true;
+user float radiance_muzzle_size = 96.0;
+user float radiance_surface_glow = 1.0;
+user int   radiance_surfaces = 7;
+user float hf_glow_combatmul = 1.0;
+user bool  hf_glow_cycle = false;
+user float hf_glow_cycle_speed = 1.0;
+user bool  hf_glow_enabled = true;
+user bool  hf_glow_gradient = false;
+user float hf_glow_height = 64.0;
+user float hf_glow_height_top = 64.0;
+user float hf_glow_inten_top = 1.0;
+user float hf_glow_intensity = 1.0;
+user float hf_glow_speed = 1.0;
+user bool  hf_streakhud = false;
+user float hf_streakhud_scale = 1.0;
+user float hf_streakhud_x = 0.85;
+user float hf_streakhud_y = 0.86;
+
+// RADIANCE_Hud (floating in-air HUD panels) had zero enable/disable cvar before this extraction --
+// it ran unconditionally the instant it was ever registered. Added so it's opt-in; default off
+// since its own class comment calls the layout "placeholder... user's to tune."
+user bool radiance_hud_enabled = false;
