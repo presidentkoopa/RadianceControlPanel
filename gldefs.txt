@@ -11,7 +11,7 @@
 HardwareShader PostProcess beforebloom
 {
 	Name "BloomBoostPre"
-	Shader "shaders/radiance/gitd_bloomboost_pre.fp" 330
+	Shader "shaders/radiance/radiance_bloomboost_pre.fp" 330
 	Uniform float gamma
 	Uniform float contrast
 	Uniform float brightness
@@ -19,7 +19,7 @@ HardwareShader PostProcess beforebloom
 HardwareShader PostProcess scene
 {
 	Name "BloomBoostPost"
-	Shader "shaders/radiance/gitd_bloomboost_post.fp" 330
+	Shader "shaders/radiance/radiance_bloomboost_post.fp" 330
 	Uniform float gamma
 	Uniform float contrast
 	Uniform float brightness

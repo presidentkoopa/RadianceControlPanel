@@ -1,4 +1,4 @@
-class GITD_SDFImp : DoomImp
+class RADIANCE_SDFImp : DoomImp
 {
     float matrix_glitch;
     int   matrix_id;
@@ -60,7 +60,7 @@ class GITD_SDFImp : DoomImp
 
 // Replacement for the standard Imp if the user wants it global, 
 // but for now we'll just keep it as a new actor they can spawn.
-class GITD_SDFImp_Shatter : Actor
+class RADIANCE_SDFImp_Shatter : Actor
 {
     float glitch;
     Default

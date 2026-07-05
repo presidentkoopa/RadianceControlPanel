@@ -4,15 +4,15 @@
 //  Procedural, animated shape previews drawn on the flat 2D menu layer -- like
 //  the tooltip panel, so they read correctly in VR. Nothing renders in-world.
 //
-//  GITD_GalleryMenu  : a full grid picker (one animated cell per value).
-//  OptionMenuItemGITDPreview : an OPTION ROW that draws the animated preview of
+//  RADIANCE_GalleryMenu  : a full grid picker (one animated cell per value).
+//  OptionMenuItemRADIANCEPreview : an OPTION ROW that draws the animated preview of
 //                              its current value inline, right on the list.
 //
 //  The drawing toolkit (DrawShape + primitives) is STATIC so both share it.
 //  Animation is driven off real time (MSTimeF), like the spinning menu cursor.
 // ============================================================================
 
-class GITD_GalleryMenu : OptionMenu
+class RADIANCE_GalleryMenu : OptionMenu
 {
 	// ---- shape ids -------------------------------------------------------
 	const SH_POOL    = 0;   const SH_SEAM   = 1;   const SH_GHOST  = 2;
@@ -37,7 +37,7 @@ class GITD_GalleryMenu : OptionMenu
 
 	int sel;                // highlighted cell
 	int activeValue;        // value currently written in the cvar (or last preset applied)
-	bool presetMode;        // true = cells fire gitd_preset_apply netevents, not a cvar
+	bool presetMode;        // true = cells fire radiance_preset_apply netevents, not a cvar
 
 	// neon palette
 	Color C_CYAN;
@@ -111,7 +111,7 @@ class GITD_GalleryMenu : OptionMenu
 				activeValue = vals[sel];
 				if (presetMode)
 				{
-					EventHandler.SendNetworkEvent("gitd_preset_apply", vals[sel]);
+					EventHandler.SendNetworkEvent("radiance_preset_apply", vals[sel]);
 				}
 				else
 				{
@@ -212,7 +212,7 @@ class GITD_GalleryMenu : OptionMenu
 	// map a pattern cvar's current value to a shape id (for inline previews)
 	static int ShapeForCvar(Name cv, int v)
 	{
-		if (cv == 'gitd_death_style')
+		if (cv == 'radiance_death_style')
 		{
 			static const int D[] = { SH_POOL, SH_SEAM, SH_GHOST, SH_PING, SH_X,
 				SH_HEXF, SH_HEXR, SH_SPIRAL, SH_SONAR, SH_FIRE, SH_SQR, SH_STAR,
@@ -220,7 +220,7 @@ class GITD_GalleryMenu : OptionMenu
 			if (v >= 0 && v < D.Size()) return D[v];
 			return SH_RANDOM;
 		}
-		if (cv == 'gitd_impact_style')
+		if (cv == 'radiance_impact_style')
 		{
 			static const int I[] = { SH_OFF, SH_GLOW, SH_RING, SH_X, SH_HEXF,
 				SH_HEXR, SH_SPIRAL, SH_SQR, SH_STAR, SH_SUN, SH_GRID, SH_RANDOM,
@@ -228,14 +228,14 @@ class GITD_GalleryMenu : OptionMenu
 			if (v >= 0 && v < I.Size()) return I[v];
 			return SH_RANDOM;
 		}
-		if (cv == 'gitd_impactspark')
+		if (cv == 'radiance_impactspark')
 		{
 			static const int S[] = { SH_OFF, SH_FIRE, SH_ERUPT, SH_DUST, SH_FIRE,
 				SH_POOL, SH_FIRE, SH_RANDOM };
 			if (v >= 0 && v < S.Size()) return S[v];
 			return SH_RANDOM;
 		}
-		if (cv == 'gitd_wall_pattern')
+		if (cv == 'radiance_wall_pattern')
 		{
 			if (v == 0) return SH_BARS;
 			if (v == 1) return SH_SCAN;
@@ -673,10 +673,10 @@ class GITD_GalleryMenu : OptionMenu
 
 // ============================================================================
 //  INLINE OPTION ROW -- draws the animated preview of its current value right
-//  on the options list. Used in MENUDEF as:  GITDPreview "Label", "cvar", "Values"
+//  on the options list. Used in MENUDEF as:  RADIANCEPreview "Label", "cvar", "Values"
 //  (works exactly like Option; the extra Init args are optional).
 // ============================================================================
-class OptionMenuItemGITDPreview : OptionMenuItemOption
+class OptionMenuItemRADIANCEPreview : OptionMenuItemOption
 {
 	override int Draw(OptionMenuDescriptor desc, int y, int indent, bool selected)
 	{
@@ -694,25 +694,25 @@ class OptionMenuItemGITDPreview : OptionMenuItemOption
 
 		CVar cv = CVar.FindCVar(mAction);
 		int val = cv ? cv.GetInt() : 0;
-		int shape = GITD_GalleryMenu.ShapeForCvar(mAction, val);
+		int shape = RADIANCE_GalleryMenu.ShapeForCvar(mAction, val);
 
 		double t = MSTimeF() / 1000.0;
 		Color col = selected ? Color(255, 255, 255, 255) : Color(255, 60, 220, 255);
 		Color bg  = Color(255, 10, 16, 26);
-		GITD_GalleryMenu.DrawShape(shape, cx, cy, rad, t, col, bg, false);
+		RADIANCE_GalleryMenu.DrawShape(shape, cx, cy, rad, t, col, bg, false);
 		return baseIndent;
 	}
 }
 
 // ============================================================================
-//  Death Bloom gallery -- sets gitd_death_style (15 styles).
+//  Death Bloom gallery -- sets radiance_death_style (15 styles).
 // ============================================================================
-class GITD_GalleryDeathMenu : GITD_GalleryMenu
+class RADIANCE_GalleryDeathMenu : RADIANCE_GalleryMenu
 {
 	override void SetupGallery()
 	{
 		galTitle = "DEATH BLOOM";
-		cvarName = "gitd_death_style";
+		cvarName = "radiance_death_style";
 		cols = 5;
 		AddCell(0,  "Death Pool",   SH_POOL);
 		AddCell(1,  "Seam Reveal",  SH_SEAM);
@@ -733,14 +733,14 @@ class GITD_GalleryDeathMenu : GITD_GalleryMenu
 }
 
 // ============================================================================
-//  Impact Stamp gallery -- sets gitd_impact_style (13 styles).
+//  Impact Stamp gallery -- sets radiance_impact_style (13 styles).
 // ============================================================================
-class GITD_GalleryImpactMenu : GITD_GalleryMenu
+class RADIANCE_GalleryImpactMenu : RADIANCE_GalleryMenu
 {
 	override void SetupGallery()
 	{
 		galTitle = "IMPACT STAMP";
-		cvarName = "gitd_impact_style";
+		cvarName = "radiance_impact_style";
 		cols = 5;
 		AddCell(0,  "Off",          SH_OFF);
 		AddCell(1,  "Glow",         SH_GLOW);
@@ -759,14 +759,14 @@ class GITD_GalleryImpactMenu : GITD_GalleryMenu
 }
 
 // ============================================================================
-//  Spark Burst gallery -- sets gitd_impactspark (7 styles + off).
+//  Spark Burst gallery -- sets radiance_impactspark (7 styles + off).
 // ============================================================================
-class GITD_GallerySparkMenu : GITD_GalleryMenu
+class RADIANCE_GallerySparkMenu : RADIANCE_GalleryMenu
 {
 	override void SetupGallery()
 	{
 		galTitle = "SPARK BURST";
-		cvarName = "gitd_impactspark";
+		cvarName = "radiance_impactspark";
 		cols = 4;
 		AddCell(0, "Off",         SH_OFF);
 		AddCell(1, "Sparks",      SH_FIRE);
@@ -780,14 +780,14 @@ class GITD_GallerySparkMenu : GITD_GalleryMenu
 }
 
 // ============================================================================
-//  Wall Pattern gallery -- sets gitd_wall_pattern (BETA).
+//  Wall Pattern gallery -- sets radiance_wall_pattern (BETA).
 // ============================================================================
-class GITD_GalleryWallMenu : GITD_GalleryMenu
+class RADIANCE_GalleryWallMenu : RADIANCE_GalleryMenu
 {
 	override void SetupGallery()
 	{
 		galTitle = "WALL PATTERN";
-		cvarName = "gitd_wall_pattern";
+		cvarName = "radiance_wall_pattern";
 		cols = 4;
 		AddCell(0, "Neon Pillar", SH_BARS);
 		AddCell(1, "Scan Lines",  SH_SCAN);
@@ -797,10 +797,10 @@ class GITD_GalleryWallMenu : GITD_GalleryMenu
 }
 
 // ============================================================================
-//  Presets gallery -- fires gitd_preset_apply netevents; animated colour
+//  Presets gallery -- fires radiance_preset_apply netevents; animated colour
 //  swatches instead of geometric shapes.
 // ============================================================================
-class GITD_GalleryPresetMenu : GITD_GalleryMenu
+class RADIANCE_GalleryPresetMenu : RADIANCE_GalleryMenu
 {
 	override void SetupGallery()
 	{

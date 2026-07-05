@@ -1,10 +1,10 @@
 // ============================================================================
-// gitd_shaderbridge.zs -- Radiance Shader Bridge
+// radiance_shaderbridge.zs -- Radiance Shader Bridge
 // ============================================================================
 // Syncs User CVars and Gameplay Events to the main fragment shader (main.fp)
 // ============================================================================
 
-class GITD_ShaderBridge : StaticEventHandler
+class RADIANCE_ShaderBridge : StaticEventHandler
 {
 	int lastHitTime;
 	int lastFireTime;
@@ -52,7 +52,7 @@ class GITD_ShaderBridge : StaticEventHandler
 	// Sync every UI tick to ensure sliders and reactive effects feel responsive.
 	override void UiTick()
 	{
-		// GITD fog / visual-regime / impact / gameplay-event uniforms were pushed here via
+		// RADIANCE fog / visual-regime / impact / gameplay-event uniforms were pushed here via
 		// Shader.SetUniform{Int,Float,Vec3}("main", ...) -- methods that DO NOT EXIST for the scene
 		// shader (and would target a post-process path that can't reach main.fp anyway). Those uniforms
 		// now live in the StreamData UBO (hw_renderstate.h + vk_shader.cpp), defaulting to OFF. A live
@@ -67,7 +67,7 @@ class GITD_ShaderBridge : StaticEventHandler
 		PlayerInfo pi = players[consoleplayer];
 		if (!pi) return;
 
-		bool enabled = CVar.GetCVar("gitd_bloom").GetBool();
+		bool enabled = CVar.GetCVar("radiance_bloom").GetBool();
 		if (!enabled)
 		{
 			Shader.SetEnabled(pi, "BloomBoostPre", false);
@@ -75,15 +75,15 @@ class GITD_ShaderBridge : StaticEventHandler
 			return;
 		}
 
-		float gamma = CVar.GetCVar("gitd_bloomboost_gamma").GetFloat();
-		float contrast = CVar.GetCVar("gitd_bloomboost_contrast").GetFloat() * 0.01;
-		float brightness = CVar.GetCVar("gitd_bloomboost_brightness").GetFloat() * 0.01;
+		float gamma = CVar.GetCVar("radiance_bloomboost_gamma").GetFloat();
+		float contrast = CVar.GetCVar("radiance_bloomboost_contrast").GetFloat() * 0.01;
+		float brightness = CVar.GetCVar("radiance_bloomboost_brightness").GetFloat() * 0.01;
 
 		// Adrenaline Spike
-		if (CVar.GetCVar("gitd_bloom_reactive").GetBool())
+		if (CVar.GetCVar("radiance_bloom_reactive").GetBool())
 		{
-			float reactAmt = CVar.GetCVar("gitd_bloom_react_amt").GetFloat();
-			float reactSpeed = CVar.GetCVar("gitd_bloom_react_speed").GetFloat();
+			float reactAmt = CVar.GetCVar("radiance_bloom_react_amt").GetFloat();
+			float reactSpeed = CVar.GetCVar("radiance_bloom_react_speed").GetFloat();
 
 			// Calculate decay since last events
 			float fireAge = (level.maptime - lastFireTime) / 35.0;

@@ -1,27 +1,27 @@
 // ============================================================================
-//  GITD_ComboMeter -- a cumulative DAMAGE counter drawn with the SHADER digits
+//  RADIANCE_ComboMeter -- a cumulative DAMAGE counter drawn with the SHADER digits
 //  (wipeType 13: the SAME engine glow-number the floor kill counter uses), riding
 //  each monster. Keep damaging it -> the number CLIMBS; stop too long -> the chain
 //  breaks, the number fades, and the PEAK is banked into the score system.
 //
-//  This is the GITD glow SHADER, not sprites. It draws on the floor beneath the
+//  This is the RADIANCE glow SHADER, not sprites. It draws on the floor beneath the
 //  monster, tracking it. It runs in TANDEM with HF_DamNum (the per-hit pops) --
-//  two separate systems, on purpose. VR-safe (flat surface glow like every GITD FX).
+//  two separate systems, on purpose. VR-safe (flat surface glow like every RADIANCE FX).
 //
 //  Score tie-in: on bank it fires the `hf_combo_bank` netevent (player, points,
 //  peak). HF's score brain (HF_ScoreHandler) receives it and awards the points --
-//  decoupled, so GITD never hard-depends on HF being loaded.
+//  decoupled, so RADIANCE never hard-depends on HF being loaded.
 //
-//  Cvars: gitd_combo_enabled, gitd_combo_target (0 all / 1 champions / 2 bosses),
-//         gitd_combo_fade (chain-break window, tics), gitd_combo_radius,
-//         gitd_combo_scoremul, gitd_combo_color (0 cyan / 1 gold / 2 red / 3 green).
+//  Cvars: radiance_combo_enabled, radiance_combo_target (0 all / 1 champions / 2 bosses),
+//         radiance_combo_fade (chain-break window, tics), radiance_combo_radius,
+//         radiance_combo_scoremul, radiance_combo_color (0 cyan / 1 gold / 2 red / 3 green).
 // ============================================================================
 
-class GITD_ComboTag : Actor
+class RADIANCE_ComboTag : Actor
 {
 	int total;      // cumulative damage this chain
 	int peak;       // highest the chain reached (what we bank)
-	int chain;      // tics since the last hit (breaks at gitd_combo_fade)
+	int chain;      // tics since the last hit (breaks at radiance_combo_fade)
 	int age;        // for the open animation
 	int owner;      // player number that built this chain (for scoring)
 	bool banked;
@@ -49,7 +49,7 @@ class GITD_ComboTag : Actor
 		Actor mon = master;
 		if (!mon || mon.health <= 0) { Bank(); return; }     // monster gone -> bank the chain
 
-		int fadeAfter = max(5, CInt("gitd_damage_numbers_window", 15));
+		int fadeAfter = max(5, CInt("radiance_damage_numbers_window", 15));
 		chain++;
 		if (chain > fadeAfter) { Bank(); return; }            // chain broke -> bank
 
@@ -58,11 +58,11 @@ class GITD_ComboTag : Actor
 		// draw the running total with the shader, on a PANEL floating above the monster's
 		// head, FACING the player (the in-air glow-billboard, not the floor disc).
 		int shown = clamp(total, 0, 99999);
-		int cidx  = clamp(CInt("gitd_combo_color", 1), 0, 3);   // default gold
+		int cidx  = clamp(CInt("radiance_combo_color", 1), 0, 3);   // default gold
 
 		// neon colour per cidx (cyan / gold / red / green)
 		int br, bg, bb;
-		CVar cc = CVar.FindCVar("gitd_damage_numbers_color");
+		CVar cc = CVar.FindCVar("radiance_damage_numbers_color");
 		if (cc)
 		{
 			Color c = cc.GetInt();
@@ -82,7 +82,7 @@ class GITD_ComboTag : Actor
 		double rad   = 22.0;                                    // panel half-size
 		double headZ = mon.pos.z + mon.height + 16.0;          // float just above the head
 
-		int style = CInt("gitd_combo_style", 0);
+		int style = CInt("radiance_combo_style", 0);
 		if (style == 0 || style == 2)
 		{
 			level.AddGlowPanel(col, rad, mon.pos.x, mon.pos.y, headZ, 6313,
@@ -92,7 +92,7 @@ class GITD_ComboTag : Actor
 		{
 			int packn = shown + cidx * 131072;
 			Color floorCol = Color(255, (packn >> 16) & 255, (packn >> 8) & 255, packn & 255);
-			double floorRad = CFlt("gitd_combo_radius", 56.0);
+			double floorRad = CFlt("radiance_combo_radius", 56.0);
 			level.AddGlowSpotWiped(floorCol, floorRad, mon.pos.x, mon.pos.y, 13, prog, 1.0, 0.0, 1);
 		}
 	}
@@ -102,21 +102,21 @@ class GITD_ComboTag : Actor
 		if (!banked && peak > 0)
 		{
 			banked = true;
-			double mul = CFlt("gitd_combo_scoremul", 1.0);
+			double mul = CFlt("radiance_combo_scoremul", 1.0);
 			int pts = int(peak * mul);
 			if (pts > 0)
 				EventHandler.SendNetworkEvent("hf_combo_bank", owner, pts, peak);
 
 			// fire the kill-reward score display at the spot the chain ended
 			Vector3 sp = (burstAt.x == 0 && burstAt.y == 0 && burstAt.z == 0) ? pos : burstAt;
-			GITD_ScoreBurst b = GITD_ScoreBurst(Actor.Spawn("GITD_ScoreBurst", sp));
+			RADIANCE_ScoreBurst b = RADIANCE_ScoreBurst(Actor.Spawn("RADIANCE_ScoreBurst", sp));
 			if (b) { b.burstScore = peak; b.owner = owner; b.maxlife = 90; }
 		}
 		Destroy();
 	}
 }
 
-class GITD_ComboHandler : EventHandler
+class RADIANCE_ComboHandler : EventHandler
 {
 	static int CInt(string n, int d) { CVar c = CVar.FindCVar(n); return c ? c.GetInt() : d; }
 
@@ -128,17 +128,17 @@ class GITD_ComboHandler : EventHandler
 		int pn = PlayerFrom(e);
 		if (pn < 0) return;
 
-		int mode = CInt("gitd_damage_numbers_mode", 0);
+		int mode = CInt("radiance_damage_numbers_mode", 0);
 		if (mode == 1) // Per-Shot Numbers
 		{
-			GITD_DamPop.Fire(mon.pos + (0, 0, mon.height * 0.6), e.Damage);
+			RADIANCE_DamPop.Fire(mon.pos + (0, 0, mon.height * 0.6), e.Damage);
 		}
 		else if (mode == 2) // Cumulative Tracking
 		{
-			GITD_ComboTag tag = FindTag(mon);
+			RADIANCE_ComboTag tag = FindTag(mon);
 			if (!tag)
 			{
-				tag = GITD_ComboTag(Actor.Spawn("GITD_ComboTag", mon.pos));
+				tag = RADIANCE_ComboTag(Actor.Spawn("RADIANCE_ComboTag", mon.pos));
 				if (tag) 
 				{
 					tag.master = mon;
@@ -149,12 +149,12 @@ class GITD_ComboHandler : EventHandler
 		}
 
 		// Keep the old combo logic running for scoring if enabled, but independent of popups
-		if (CInt("gitd_combo_enabled", 1) && mode != 2)
+		if (CInt("radiance_combo_enabled", 1) && mode != 2)
 		{
-			GITD_ComboTag tag = FindTag(mon);
+			RADIANCE_ComboTag tag = FindTag(mon);
 			if (!tag && PassesFilter(mon))
 			{
-				tag = GITD_ComboTag(Actor.Spawn("GITD_ComboTag", mon.pos));
+				tag = RADIANCE_ComboTag(Actor.Spawn("RADIANCE_ComboTag", mon.pos));
 				if (tag) 
 				{
 					tag.master = mon;
@@ -176,7 +176,7 @@ class GITD_ComboHandler : EventHandler
 
 	bool PassesFilter(Actor mon)
 	{
-		int f = CInt("gitd_combo_target", 0);     // 0 all, 1 champions, 2 bosses
+		int f = CInt("radiance_combo_target", 0);     // 0 all, 1 champions, 2 bosses
 		if (f <= 0) return true;
 		if (f == 2) return mon.bBoss;
 		// champions: HF tags them elsewhere; until that's wired, treat bosses as the
@@ -184,11 +184,11 @@ class GITD_ComboHandler : EventHandler
 		return mon.bBoss;
 	}
 
-	GITD_ComboTag FindTag(Actor mon)
+	RADIANCE_ComboTag FindTag(Actor mon)
 	{
-		ThinkerIterator it = ThinkerIterator.Create("GITD_ComboTag");
-		GITD_ComboTag t;
-		while (t = GITD_ComboTag(it.Next()))
+		ThinkerIterator it = ThinkerIterator.Create("RADIANCE_ComboTag");
+		RADIANCE_ComboTag t;
+		while (t = RADIANCE_ComboTag(it.Next()))
 			if (t.master == mon) return t;
 		return null;
 	}

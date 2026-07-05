@@ -1,11 +1,11 @@
 // ============================================================================
-//  GITD_ScoreBurst -- the kill-reward burstScore display. Spawned by a combo's
+//  RADIANCE_ScoreBurst -- the kill-reward burstScore display. Spawned by a combo's
 //  Bank() at the spot where the chain ended. The final burstScore's digits CONVERGE
 //  in from a scatter (shard-assemble), hold, then FADE out. Camera-facing so it
 //  stays readable; one-shot (self-destructs). Built entirely on the glow-panel
 //  primitive -- the first unfolding display wired to a real game event.
 // ============================================================================
-class GITD_ScoreBurst : Actor
+class RADIANCE_ScoreBurst : Actor
 {
 	int burstScore;
 	int owner;

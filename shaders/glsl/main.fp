@@ -729,9 +729,9 @@ void SetMaterialProps(inout Material material, vec2 texCoord)
 //
 //===========================================================================
 
-// ====================== GITD NEON-TUBE DISPLAY HELPERS ======================
+// ====================== RADIANCE NEON-TUBE DISPLAY HELPERS ======================
 // Capsule SDF: unsigned distance from p to the segment a->b centerline.
-float gitd_segDist(vec2 p, vec2 a, vec2 b)
+float radiance_segDist(vec2 p, vec2 a, vec2 b)
 {
 	vec2 pa = p - a;
 	vec2 ba = b - a;
@@ -739,13 +739,13 @@ float gitd_segDist(vec2 p, vec2 a, vec2 b)
 	return length(pa - ba * h);
 }
 // Fold one segment into the running min distance, only if its mask bit is on.
-float gitd_segMin(float dcur, float on, vec2 p, vec2 a, vec2 b)
+float radiance_segMin(float dcur, float on, vec2 p, vec2 a, vec2 b)
 {
-	float d = gitd_segDist(p, a, b);
+	float d = radiance_segDist(p, a, b);
 	return min(dcur, mix(1e3, d, on));
 }
 // Signed distance to a circular ARC (the curve keystone for tube-font text later).
-float gitd_arc(vec2 p, vec2 c, float ra, float a0, float a1, float r)
+float radiance_arc(vec2 p, vec2 c, float ra, float a0, float a1, float r)
 {
 	vec2 dd = p - c;
 	float ang = atan(dd.y, dd.x);
@@ -757,28 +757,28 @@ float gitd_arc(vec2 p, vec2 c, float ra, float a0, float a1, float r)
 	return min(length(p - e0), length(p - e1)) - r;
 }
 // cheap hash + 1D value noise for organic flicker.
-float gitd_hash(float n){ return fract(sin(n) * 43758.5453123); }
-float gitd_vnoise(float x){
+float radiance_hash(float n){ return fract(sin(n) * 43758.5453123); }
+float radiance_vnoise(float x){
 	float i = floor(x), f = fract(x);
 	f = f * f * (3.0 - 2.0 * f);
-	return mix(gitd_hash(i), gitd_hash(i + 1.0), f);
+	return mix(radiance_hash(i), radiance_hash(i + 1.0), f);
 }
 // Master neon flicker multiplier (~0.55 .. 1.15), de-correlated per panel by seed.
-float gitd_neonFlicker(float t, float seed)
+float radiance_neonFlicker(float t, float seed)
 {
 	float ph = seed * 6.2831853;
 	float buzz = 0.5 * sin(t * 458.0 + ph) + 0.5 * sin(t * 572.0 + ph * 1.7);
 	buzz = 1.0 + 0.045 * buzz;
-	float jit = 1.0 - 0.06 * gitd_vnoise(t * 7.0 + seed * 13.0);
+	float jit = 1.0 - 0.06 * radiance_vnoise(t * 7.0 + seed * 13.0);
 	float breathe = 0.96 + 0.06 * sin(t * 0.9 + ph);
-	float drv  = gitd_vnoise(t * 0.55 + seed * 31.0);
+	float drv  = radiance_vnoise(t * 0.55 + seed * 31.0);
 	float gate = 1.0 - smoothstep(0.0, 0.14, drv);
 	float stut = step(0.5, fract(t * 17.0 + seed * 5.0));
 	float drop = mix(1.0, mix(0.35, 0.85, stut), gate);
 	return clamp(buzz * jit * breathe * drop, 0.55, 1.15);
 }
 // Spawn warm-up: while pbright ramps 0->1 the tube over-brightens & shivers.
-float gitd_neonWarmup(float pb, float t, float seed)
+float radiance_neonWarmup(float pb, float t, float seed)
 {
 	float warm = 1.0 - smoothstep(0.0, 1.0, pb);
 	float surge  = 1.0 + 0.55 * warm;
@@ -786,14 +786,14 @@ float gitd_neonWarmup(float pb, float t, float seed)
 	return surge * shiver;
 }
 // Additive-safe vibrance: expand channels away from luma, no white blowout.
-vec3 gitd_vibrance(vec3 c, float amt)
+vec3 radiance_vibrance(vec3 c, float amt)
 {
 	float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
 	return clamp(mix(vec3(l), c, 1.0 + amt), 0.0, 2.0);
 }
 // Signed distance to a rounded box (half-extents he, corner radius rad). <0 inside.
 // Keystone for the BRACKETS (18) corner frame and the GAUGE (21) outline.
-float gitd_box(vec2 p, vec2 he, float rad)
+float radiance_box(vec2 p, vec2 he, float rad)
 {
 	vec2 q = abs(p) - he + vec2(rad);
 	return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - rad;
@@ -805,7 +805,7 @@ float gy_sdf_slab(vec2 p, vec2 sz, float r)
 {
     // Rounded top, flat bottom
     p.y += sz.y * 0.5; // Offset to bottom center
-    float d = gitd_box(p - vec2(0.0, sz.y * 0.5), sz * 0.5, r);
+    float d = radiance_box(p - vec2(0.0, sz.y * 0.5), sz * 0.5, r);
     float arch = length(p - vec2(0.0, sz.y - r)) - r - sz.x * 0.5 + r;
     return max(d, arch);
 }
@@ -826,19 +826,19 @@ float gy_sdf_cross(vec2 p, vec2 sz, float thick, float ang)
     mat2 m = mat2(c, -s, s, c);
     vec2 p1 = m * p;
     vec2 p2 = m * vec2(-p.y, p.x);
-    float d1 = gitd_box(p1, vec2(sz.x, thick), thick * 0.5);
-    float d2 = gitd_box(p2, vec2(thick, sz.y), thick * 0.5);
+    float d1 = radiance_box(p1, vec2(sz.x, thick), thick * 0.5);
+    float d2 = radiance_box(p2, vec2(thick, sz.y), thick * 0.5);
     return min(d1, d2);
 }
 
 // Monolith (Glitching)
 float gy_sdf_monolith(vec2 p, vec2 sz, float t)
 {
-    float glitch = 0.05 * sin(p.y * 20.0 + t * 10.0) * step(0.9, gitd_hash(floor(t * 15.0)));
+    float glitch = 0.05 * sin(p.y * 20.0 + t * 10.0) * step(0.9, radiance_hash(floor(t * 15.0)));
     p.x += glitch;
-    return gitd_box(p, sz * 0.5, 2.0);
+    return radiance_box(p, sz * 0.5, 2.0);
 }
-// ==================== END GITD NEON-TUBE DISPLAY HELPERS ====================
+// ==================== END RADIANCE NEON-TUBE DISPLAY HELPERS ====================
 vec4 getLightColor(Material material, float fogdist, float fogfactor)
 {
 	vec4 color = vColor;
@@ -875,7 +875,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 	}
 
 	//
-	// [GITD] up to MAX_WALL_GLOW_SPOTS localized glow pools on floors/ceilings.
+	// [RADIANCE] up to MAX_WALL_GLOW_SPOTS localized glow pools on floors/ceilings.
 	// uWallGlowSpots[i] = vec4(center.x, center.z(world), packedRGB, radius). Compile-time loop
 	// bound (GLES2-legal); uWallGlowSpotCount is the dynamic early-out.
 	//
@@ -895,14 +895,14 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 				float wallPat = floor(wgTypeRaw / 100.0);
 				float wgType = wgTypeRaw - wallPat * 100.0;
 				vec3 wgAdd = vec3(0.0);
-				// [GITD-AIR] wgType==13 is an AIR PANEL: ALWAYS take the wall/panel branch (where the digit
+				// [RADIANCE-AIR] wgType==13 is an AIR PANEL: ALWAYS take the wall/panel branch (where the digit
 				// lives), regardless of the surface-normal heuristic. In VR the billboard normal reads
 				// differently and was routing panels to the floor branch -> no digit. Real walls/floors (wgType<13)
 				// still use the normal test.
 				bool isWall = (wgType > 12.5) || (abs(vWorldNormal.y) < 0.5);
 				if (isWall)
 				{
-				// [GITD-AIR] PANEL DIGIT (wgType==13): a camera-facing air panel set by the
+				// [RADIANCE-AIR] PANEL DIGIT (wgType==13): a camera-facing air panel set by the
 				// glow-billboard pass. Draw a 7-seg number in the QUAD'S OWN UV SPACE
 				// (vTexCoord.st, the interpolated 0..1 corners) so it reads facing the player
 				// wherever the panel hangs. The number rides the spare uWallGlowMask[].z lane
@@ -917,7 +917,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 					float pbright = clamp(wgMask.y, 0.0, 1.0);   // wipeProgress lane = panel brightness/fade (1 = full)
 					// ---- per-panel flicker seed (de-correlates signs by colour + value) ----
 					float pseed  = fract(dot(wgCol, vec3(0.37, 0.71, 0.19)) + pnum * 0.013);
-					float pflick = gitd_neonFlicker(timer, pseed) * gitd_neonWarmup(pbright, timer, pseed);
+					float pflick = radiance_neonFlicker(timer, pseed) * radiance_neonWarmup(pbright, timer, pseed);
 
 					if (wgType > 25.5 && wgType < 26.5)        // ---- LIGHTNING BOLT (26): jagged gold streak, .y = strike 1..0 ----
 					{
@@ -978,7 +978,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 
 						float core = smoothstep(0.03, -0.10, dd);
 						float halo = exp(-max(dd, 0.0) * 11.0); halo *= halo;
-						vec3  hue  = gitd_vibrance(wgCol, 0.55);
+						vec3  hue  = radiance_vibrance(wgCol, 0.55);
 						vec3  coreColor = ( vec3(2.4) * core + hue * (halo * 2.2 + core * 0.6) ) * pbright * pflick;
 						wgAdd += hue * (halo * 0.9) * pbright * pflick;
 						if (halo > 0.0035 || core > 0.001)
@@ -993,7 +993,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 						float dd = min(abs(spark) - 0.02, ctr);
 						float core = smoothstep(0.03, -0.10, dd);
 						float halo = exp(-max(dd, 0.0) * 13.0); halo *= halo;
-						vec3  hue  = gitd_vibrance(wgCol, 0.45);
+						vec3  hue  = radiance_vibrance(wgCol, 0.45);
 						vec3  coreColor = ( vec3(2.8) * core + hue * (halo * 2.0 + core * 0.6) ) * pbright * pflick;
 						wgAdd += hue * (halo * 0.8) * pbright * pflick;
 						if (halo > 0.0035 || core > 0.001)
@@ -1017,7 +1017,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 						float env = 1.0 - smoothstep(0.55, 1.0, panim);      // dissipates near the end
 						float core = smoothstep(0.03, -0.06, dd);
 						float halo = exp(-max(dd, 0.0) * 12.0); halo *= halo;
-						vec3  hue  = gitd_vibrance(wgCol, 0.55);
+						vec3  hue  = radiance_vibrance(wgCol, 0.55);
 						vec3  coreColor = ( vec3(2.4) * core + hue * (halo * 2.0 + core * 0.5) )
 						                  * pbright * pflick * env;
 						wgAdd += hue * (halo * 0.8) * pbright * pflick * env;
@@ -1032,7 +1032,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 						float env = panim * panim;                   // caller fades panim toward 0 for snap-off
 						float core = smoothstep(0.10, -0.30, dd);     // big soft interior
 						float halo = exp(-max(dd, 0.0) * 8.0); halo *= halo;
-						vec3  hue  = gitd_vibrance(wgCol, 0.45);
+						vec3  hue  = radiance_vibrance(wgCol, 0.45);
 						vec3  coreColor = ( vec3(2.8) * core + hue * (halo * 1.6 + core * 0.4) )
 						                  * pbright * pflick * env;
 						wgAdd += hue * (halo * 0.7) * pbright * pflick * env;
@@ -1044,8 +1044,8 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 						float panim = clamp(wgMask.y, 0.0, 1.0);
 						vec2  q = vec2(nx, ny);
 						// two cheap 1-D value-noise lumps break the circle into smoke
-						float n1 = gitd_vnoise(q.x * 3.1 + timer * 0.6 + pseed * 7.0);
-						float n2 = gitd_vnoise(q.y * 2.7 - timer * 0.5 + pseed * 3.0);
+						float n1 = radiance_vnoise(q.x * 3.1 + timer * 0.6 + pseed * 7.0);
+						float n2 = radiance_vnoise(q.y * 2.7 - timer * 0.5 + pseed * 3.0);
 						float lump = (n1 + n2) * 0.25;               // ~0..0.5
 						float r    = length(q) * (1.0 + 0.35 * (lump - 0.25));
 						float edge = 0.55 + 0.25 * panim;            // billows outward with t
@@ -1075,7 +1075,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 						// long mid-runs are masked out so it reads as [   ] corners, not a box).
 						vec2  bp  = vec2(nx, ny);
 						vec2  he  = vec2(0.78, 0.62);                 // frame half-extents
-						float frame = abs(gitd_box(bp, he, 0.05)) - 0.035;   // hollow outline band
+						float frame = abs(radiance_box(bp, he, 0.05)) - 0.035;   // hollow outline band
 						// keep only the corner runs: a point is "corner" if it is near BOTH
 						// the x-edge and y-edge bands (within 'arm' of a corner along each axis).
 						float arm = 0.30;
@@ -1090,7 +1090,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 
 						float core = smoothstep(0.03, -0.10, dd);
 						float halo = exp(-max(dd, 0.0) * 11.0); halo *= halo;
-						vec3  hue  = gitd_vibrance(wgCol, 0.55);
+						vec3  hue  = radiance_vibrance(wgCol, 0.55);
 						vec3  coreColor = ( vec3(2.6) * core + hue * (halo * 2.2 + core * 0.6) ) * pbright * pflick;
 						wgAdd += hue * (halo * 0.9) * pbright * pflick;
 						if (halo > 0.0035 || core > 0.001)
@@ -1106,7 +1106,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 						// composite waveform (cheap, no loops)
 						float w  = sin(nx * 6.0 + timer * 3.0 + ph) * 0.55;
 						w += sin(nx * 13.0 - timer * 2.0 + ph * 1.7) * 0.30;
-						w += (gitd_vnoise(nx * 5.0 + timer * 1.5 + pseed * 9.0) - 0.5) * 0.55;
+						w += (radiance_vnoise(nx * 5.0 + timer * 1.5 + pseed * 9.0) - 0.5) * 0.55;
 						float wy = clamp(w * amp, -0.92, 0.92);                  // target y at this x
 						// distance from this pixel to the trace (vertical band -> tube)
 						float dTrace = abs(ny - wy) - 0.025;
@@ -1117,7 +1117,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 
 						float core = smoothstep(0.03, -0.10, dd);
 						float halo = exp(-max(dd, 0.0) * 12.0); halo *= halo;
-						vec3  hue  = gitd_vibrance(wgCol, 0.55);
+						vec3  hue  = radiance_vibrance(wgCol, 0.55);
 						vec3  coreColor = ( vec3(2.6) * core + hue * (halo * 2.2 + core * 0.6) ) * pbright * pflick;
 						wgAdd += hue * (halo * 0.9) * pbright * pflick;
 						if (halo > 0.0035 || core > 0.001)
@@ -1129,7 +1129,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 						float fill = clamp(pnum / 100.0, 0.0, 1.0);              // 0..1 fill fraction
 						vec2  bp   = vec2(nx, ny);
 						vec2  he   = vec2(0.80, 0.26);                           // bar frame half-extents
-						float frame = abs(gitd_box(bp, he, 0.04)) - 0.022;      // outline band always lit
+						float frame = abs(radiance_box(bp, he, 0.04)) - 0.022;      // outline band always lit
 						float dd = frame;
 						// inside the frame: draw discrete segments up to the fill level
 						if (abs(nx) < he.x - 0.06 && abs(ny) < he.y - 0.06)
@@ -1150,7 +1150,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 
 						float core = smoothstep(0.03, -0.10, dd);
 						float halo = exp(-max(dd, 0.0) * 11.0); halo *= halo;
-						vec3  hue  = gitd_vibrance(wgCol, 0.55);
+						vec3  hue  = radiance_vibrance(wgCol, 0.55);
 						vec3  coreColor = ( vec3(2.6) * core + hue * (halo * 2.2 + core * 0.6) ) * pbright * pflick;
 						wgAdd += hue * (halo * 0.9) * pbright * pflick;
 						if (halo > 0.0035 || core > 0.001)
@@ -1167,7 +1167,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 						float cfrac = fract(u * COLS);                // 0..1 within column
 						// per-column animated height (heatmap-ish)
 						float seedC = ci * 0.131 + pseed * 7.0;
-						float h = gitd_vnoise(seedC + timer * 2.2) * 0.6
+						float h = radiance_vnoise(seedC + timer * 2.2) * 0.6
 						        + 0.4 * (0.5 + 0.5 * sin(timer * 4.0 + ci * 0.9 + pseed * 6.0));
 						h = clamp(h, 0.05, 0.98);                     // bar height 0..1 (top from baseline)
 						float top = mix(0.92, -0.92, h);              // bar fills from bottom (+0.92) up to 'top'
@@ -1185,7 +1185,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 						float core = smoothstep(0.03, -0.10, dd);
 						float halo = exp(-max(dd, 0.0) * 11.0); halo *= halo;
 						// hue shifts a touch warmer for taller bars -> heatmap feel
-						vec3  hot  = gitd_vibrance(wgCol, 0.55);
+						vec3  hot  = radiance_vibrance(wgCol, 0.55);
 						vec3  hue  = mix(hot, hot * vec3(1.2, 0.9, 0.7), clamp(h, 0.0, 1.0) * 0.5);
 						vec3  coreColor = ( vec3(2.4) * core + hue * (halo * 2.2 + core * 0.6) ) * pbright * pflick;
 						wgAdd += hue * (halo * 0.9) * pbright * pflick;
@@ -1282,7 +1282,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 						float halo = exp(-max(dd, 0.0) * 11.0);         // saturated colour bleed outward
 						halo *= halo;
 
-						vec3 hue = gitd_vibrance(wgCol, SAT);
+						vec3 hue = radiance_vibrance(wgCol, SAT);
 
 						vec3 coreColor = ( vec3(2.6) * core
 						                 + hue * (halo * 2.2 + core * 0.6) )
@@ -1359,7 +1359,7 @@ vec4 getLightColor(Material material, float fogdist, float fogfactor)
 					}
 					float wdith = (mod(gl_FragCoord.x, 2.0) * 0.5 + mod(gl_FragCoord.y, 2.0) * 0.25 - 0.375) * (1.7 / 255.0);
 					wgAdd += vec3(wdith);
-				}   // [GITD-AIR] close wall-pattern else (panel branch wraps this)
+				}   // [RADIANCE-AIR] close wall-pattern else (panel branch wraps this)
 				}
 				else
 				{
@@ -1720,47 +1720,47 @@ vec4 ApplyFadeColor(vec4 frag)
 	return frag;
 }
 
-// ======================== GITD OMNI-FOG & REGIMES ===========================
+// ======================== RADIANCE OMNI-FOG & REGIMES ===========================
 // These uniforms now live in the StreamData UBO (see hw_renderstate.h + vk_shader.cpp),
 // fed globally per-frame. Vulkan forbids non-opaque uniforms outside a block, so the
 // loose declarations were removed; the names still resolve via #defines in the prelude
-// (u_vr_blueprint_col / u_gitd_last_impact_pos are vec4 there, swizzled to .rgb / .xyz).
+// (u_vr_blueprint_col / u_radiance_last_impact_pos are vec4 there, swizzled to .rgb / .xyz).
 
 vec4 applyOmniFog(vec4 frag, float fogdist)
 {
-	if (u_gitd_fog_mode <= 0) return applyFog(frag, exp2(uFogDensity * fogdist));
+	if (u_radiance_fog_mode <= 0) return applyFog(frag, exp2(uFogDensity * fogdist));
 	
-	float density = u_gitd_fog_density * 0.01;
+	float density = u_radiance_fog_density * 0.01;
 	float fogfactor = exp(-fogdist * density);
 	vec3 fogColor = uFogColor.rgb;
 	
 	// Light-Link: Fog matches the room's glow color
-	if (u_gitd_fog_lightlink > 0) fogColor = mix(fogColor, vColor.rgb, 0.5);
+	if (u_radiance_fog_lightlink > 0) fogColor = mix(fogColor, vColor.rgb, 0.5);
 
 	// Mode 1: Ground-Mist (Height Fog)
-	if (u_gitd_fog_mode == 1)
+	if (u_radiance_fog_mode == 1)
 	{
-		float h = clamp((pixelpos.y - u_gitd_fog_height) / -32.0, 0.0, 1.0);
+		float h = clamp((pixelpos.y - u_radiance_fog_height) / -32.0, 0.0, 1.0);
 		fogfactor = mix(1.0, fogfactor, h);
 	}
 	// Mode 2: Spectral Silhouette (Tactical Rim)
-	else if (u_gitd_fog_mode == 2)
+	else if (u_radiance_fog_mode == 2)
 	{
 		float rim = 1.0 - clamp(dot(normalize(vEyeNormal.xyz), vec3(0,0,1)), 0.0, 1.0);
-		rim = pow(rim, u_gitd_fog_rim_power);
+		rim = pow(rim, u_radiance_fog_rim_power);
 		fogColor = mix(fogColor, vec3(0.0, 1.0, 0.8), rim * (1.0 - fogfactor));
 	}
 	// Mode 3: Bit-Crush (Data Degradation)
-	else if (u_gitd_fog_mode == 3)
+	else if (u_radiance_fog_mode == 3)
 	{
-		float q = mix(255.0, u_gitd_fog_quantize, 1.0 - fogfactor);
+		float q = mix(255.0, u_radiance_fog_quantize, 1.0 - fogfactor);
 		frag.rgb = floor(frag.rgb * q) / q;
 	}
 	// Mode 4: Vortex (Noise Swirl)
-	else if (u_gitd_fog_mode == 4)
+	else if (u_radiance_fog_mode == 4)
 	{
-		float swirl = gitd_vnoise(pixelpos.x * 0.01 + timer * u_gitd_fog_speed) 
-		            * gitd_vnoise(pixelpos.z * 0.01 - timer * u_gitd_fog_speed);
+		float swirl = radiance_vnoise(pixelpos.x * 0.01 + timer * u_radiance_fog_speed) 
+		            * radiance_vnoise(pixelpos.z * 0.01 - timer * u_radiance_fog_speed);
 		fogfactor *= (0.7 + 0.3 * swirl);
 	}
 
@@ -1779,9 +1779,9 @@ vec4 applyVisualRegime(vec4 frag, vec3 worldPos)
 	if (u_vr_regime_bubble_size <= 0.0) proximityMask = 1.0;
 	
 	// Reactivity Helpers
-	float damagePulse = exp(-max(0.0, timer - u_gitd_last_hit_time) * 4.0);
-	float firePulse   = exp(-max(0.0, timer - u_gitd_last_fire_time) * 6.0);
-	float comboPulse  = u_gitd_kill_streak;
+	float damagePulse = exp(-max(0.0, timer - u_radiance_last_hit_time) * 4.0);
+	float firePulse   = exp(-max(0.0, timer - u_radiance_last_fire_time) * 6.0);
+	float comboPulse  = u_radiance_kill_streak;
 
 	// Regime 1: System Shock (Vector-Frame / Matrix)
 	if (u_vr_visual_regime == 1)
@@ -1805,7 +1805,7 @@ vec4 applyVisualRegime(vec4 frag, vec3 worldPos)
 		// Reactivity: Sonar Ping (Radial wave on fire)
 		float ping = 0.0;
 		if (u_vr_regime_react > 0) {
-			float wavePos = fract((timer - u_gitd_last_fire_time) * 2.0) * 2048.0;
+			float wavePos = fract((timer - u_radiance_last_fire_time) * 2.0) * 2048.0;
 			ping = smoothstep(256.0, 0.0, abs(distToPlayer - wavePos)) * firePulse * u_vr_regime_ping_inten;
 		}
 
@@ -1814,7 +1814,7 @@ vec4 applyVisualRegime(vec4 frag, vec3 worldPos)
 		line = smoothstep(0.0, 1.0, line);
 		
 		// Reactivity: Speed Trails (Grid brightens with velocity)
-		float speedVal = (u_vr_regime_speed_link > 0) ? u_gitd_player_speed : 1.0;
+		float speedVal = (u_vr_regime_speed_link > 0) ? u_radiance_player_speed : 1.0;
 		float gridBright = line * (u_vr_regime_param1 + speedVal + ping + comboPulse);
 		
 		vec3 gridCol = mix(vec3(0.0, 0.5, 1.0), vec3(1.0, 0.5, 0.0), comboPulse); // Blue -> Orange on streak
@@ -1856,7 +1856,7 @@ vec4 applyVisualRegime(vec4 frag, vec3 worldPos)
 		float luma = dot(frag.rgb, vec3(0.3, 0.59, 0.11));
 		vec3 noir = vec3(pow(luma, 1.5)); // High contrast grayscale
 		
-		// Keep saturation for GITD colors (heuristic: high saturation areas)
+		// Keep saturation for RADIANCE colors (heuristic: high saturation areas)
 		vec3 hsv = rgb2hsv(frag.rgb);
 		float satMask = smoothstep(0.4, 0.8, hsv.y);
 		
@@ -1869,7 +1869,7 @@ vec4 applyVisualRegime(vec4 frag, vec3 worldPos)
 	else if (u_vr_visual_regime == 7)
 	{
 		// Reactivity: Adrenaline Warp (Wavy speed increases with player velocity)
-		float speedMul = (u_vr_regime_speed_link > 0) ? (1.0 + u_gitd_player_speed * 5.0) : 1.0;
+		float speedMul = (u_vr_regime_speed_link > 0) ? (1.0 + u_radiance_player_speed * 5.0) : 1.0;
 		float wave = sin(worldPos.y * 0.1 + timer * u_vr_regime_speed * speedMul);
 		
 		vec3 hsv = rgb2hsv(frag.rgb);
@@ -1952,10 +1952,10 @@ void main()
 	// silently tolerated this) -- so the distortion is written into regimeWorldPos instead.
 	if (u_vr_ripples_enabled > 0)
 	{
-		float rippleLife = timer - u_gitd_last_impact_time;
+		float rippleLife = timer - u_radiance_last_impact_time;
 		if (rippleLife < 1.0) // 1 second ripple life
 		{
-			float distToImpact = length(pixelpos.xyz - u_gitd_last_impact_pos);
+			float distToImpact = length(pixelpos.xyz - u_radiance_last_impact_pos);
 			float wavePos = rippleLife * 2048.0; // Wave expansion speed
 			float ripple = smoothstep(128.0, 0.0, abs(distToImpact - wavePos));
 			ripple *= (1.0 - rippleLife); // Fade over time
@@ -1964,7 +1964,7 @@ void main()
 			// Note: we only distort for the 'fancy' regimes to avoid nausea on basic textures.
 			if (u_vr_visual_regime > 0)
 			{
-				regimeWorldPos = pixelpos.xyz + normalize(pixelpos.xyz - u_gitd_last_impact_pos) * ripple * 32.0 * u_vr_ripple_scale;
+				regimeWorldPos = pixelpos.xyz + normalize(pixelpos.xyz - u_radiance_last_impact_pos) * ripple * 32.0 * u_vr_ripple_scale;
 			}
 		}
 	}
@@ -2007,12 +2007,12 @@ void main()
 		if ((uTextureMode & 0xffff) != 7)
 		{
 			frag = getLightColor(material, fogdist, fogfactor);
-			// [GITD] Only run omni-fog when a GITD fog mode is explicitly enabled. Otherwise fall
+			// [RADIANCE] Only run omni-fog when a RADIANCE fog mode is explicitly enabled. Otherwise fall
 			// back to STOCK behaviour (verified vs main.fp.old_bak): apply fog ONLY for coloured
 			// fog (uFogEnabled < 0). Positive uFogEnabled is Doom light-diminishing whose uFogColor
 			// is BLACK for ordinary sectors -- applyOmniFog's unconditional fallback mixed every
 			// surface toward that black, which is the black-world bug.
-			if (u_gitd_fog_mode > 0)
+			if (u_radiance_fog_mode > 0)
 				frag = applyOmniFog(frag, fogdist);
 			else if (uFogEnabled < 0)
 				frag = applyFog(frag, fogfactor);

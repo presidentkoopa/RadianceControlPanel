@@ -1,8 +1,8 @@
 // ============================================================================
-// FILE: gitd_dark.zs  -  GITD (Glow In The Dark) darkening + flashlight layer
+// FILE: radiance_dark.zs  -  RADIANCE (Glow In The Dark) darkening + flashlight layer
 // ----------------------------------------------------------------------------
-// ROLE IN GITD:
-//   GITD is built on the idea that the world is genuinely dark, so that GLOW
+// ROLE IN RADIANCE:
+//   RADIANCE is built on the idea that the world is genuinely dark, so that GLOW
 //   (surface-gradient self-illumination) and glow-spots actually read against a
 //   black backdrop. This file supplies the TWO pieces that make that possible:
 //
@@ -13,7 +13,7 @@
 //        gamma) driven by CVARs. This is what makes "uniform dark = glow
 //        everywhere" possible (see ddz_lighting note below).
 //
-//     2) GITD_Flashlight    - a LAGLESS player flashlight implemented purely in
+//     2) RADIANCE_Flashlight    - a LAGLESS player flashlight implemented purely in
 //        ZScript. It traces the aim and SNAPS a hidden light actor to the hit
 //        point every tic, so there is no follow-lag and (crucially) no terrain
 //        splash, unlike the old TDDR hitscan-puff trick.
@@ -25,8 +25,8 @@
 // ============================================================================
 
 // ============================================================================
-// GITD DarkDoomZ (baked) - real darkening by Caligari87 / FishyClockwork
-// framework. Its OWN flashlight is REMOVED here; we use GITD_Flashlight instead
+// RADIANCE DarkDoomZ (baked) - real darkening by Caligari87 / FishyClockwork
+// framework. Its OWN flashlight is REMOVED here; we use RADIANCE_Flashlight instead
 // (lagless ZScript trace+snap, below). Multi-mode sector darkening + fog.
 // ============================================================================
 // Event handler that re-lights every sector in the map according to the ddz_*
@@ -67,7 +67,7 @@ class DarkDoomZ_Handler : EventHandler {
     }
 
     // NOTE: original PlayerSpawned gave DarkDoomZ's flashlight here - REMOVED.
-    // GITD_Flashlight (separate handler) provides the lagless flashlight instead.
+    // RADIANCE_Flashlight (separate handler) provides the lagless flashlight instead.
 
     // Fires a netevent every UI tic so darkening re-evaluates net-safely (CVAR reads must round-trip through NetworkProcess).
     override void UiTick() { EventHandler.SendNetworkEvent("UpdateLights"); }
@@ -119,25 +119,25 @@ class DarkDoomZ_Handler : EventHandler {
 }
 
 // ============================================================================
-// GITD_Flashlight - LAGLESS ZScript flashlight. Reproduces the TDDR trick
+// RADIANCE_Flashlight - LAGLESS ZScript flashlight. Reproduces the TDDR trick
 // (trace the aim, SNAP the light to the hit point each tic = no follow-lag)
 // but using ZScript LineTrace, which is a PURE QUERY - it spawns NO puff, so
 // it does NOT trigger water/lava splashes (the TDDR bug). Toggle: netevent.
 // ============================================================================
 // // Event handler that listens for the flashlight toggle netevent and grants /
 // flips the per-player flashlight controller item, playing standard click sounds.
-class GITD_FlashHandler : EventHandler
+class RADIANCE_FlashHandler : EventHandler
 {
     override void NetworkProcess(ConsoleEvent e)
     {
-        if (e.Name == "gitd_flashlight_toggle")
+        if (e.Name == "radiance_flashlight_toggle")
         {
             int pn = e.Player;                                          // which player pressed the toggle
             if (!playeringame[pn] || !players[pn].mo) return;          // guard against ghosts / no pawn
-            let fl = GITD_FlashController(players[pn].mo.FindInventory("GITD_FlashController"));
+            let fl = RADIANCE_FlashController(players[pn].mo.FindInventory("RADIANCE_FlashController"));
             if (!fl)
             {
-                players[pn].mo.GiveInventory("GITD_FlashController", 1); // first toggle: grant the controller (starts "on")
+                players[pn].mo.GiveInventory("RADIANCE_FlashController", 1); // first toggle: grant the controller (starts "on")
                 players[pn].mo.A_StartSound("DDZ_Flashlight_On", CHAN_AUTO, 0, 0.5);
             }
             else
@@ -152,7 +152,7 @@ class GITD_FlashHandler : EventHandler
 
 // Per-player inventory item that drives the flashlight: each tic it manages the
 // two spring-physics spotlights (tight beam + soft outer spill) with beautiful sway.
-class GITD_FlashController : Inventory
+class RADIANCE_FlashController : Inventory
 {
     bool on;                                                            // is the flashlight currently lit?
     DarkDoomZ_Spotlight SelfLight1, SelfLight2;                         // the two spotlights: tight beam + soft spill
@@ -177,11 +177,11 @@ class GITD_FlashController : Inventory
 
         // --- Custom Dynamic Flashlight logic ---
         int mode = 0;
-        CVar cm = CVar.FindCVar("gitd_flashlight_mode");
+        CVar cm = CVar.FindCVar("radiance_flashlight_mode");
         if (cm) mode = cm.GetInt();
 
         double intensity = 1.0;
-        CVar ci = CVar.FindCVar("gitd_flashlight_intensity");
+        CVar ci = CVar.FindCVar("radiance_flashlight_intensity");
         if (ci) intensity = ci.GetFloat();
         if (intensity < 0.1) intensity = 0.1;
         if (intensity > 2.0) intensity = 2.0;
@@ -189,7 +189,7 @@ class GITD_FlashController : Inventory
         int r = 255, g = 255, b = 255; // Default white
         if (mode == 0) // Normal LED (Custom Color Picker)
         {
-            CVar cc = CVar.FindCVar("gitd_flashlight_color");
+            CVar cc = CVar.FindCVar("radiance_flashlight_color");
             if (cc)
             {
                 int pk = cc.GetInt();
@@ -229,7 +229,7 @@ class GITD_FlashController : Inventory
         int originMode = 0;   // default view-follow
 
         int attach = 0;
-        CVar ca = CVar.FindCVar("gitd_flashlight_attach");
+        CVar ca = CVar.FindCVar("radiance_flashlight_attach");
         if (ca) attach = ca.GetInt();
 
         if (attach == 0)      // head (a few units below view/eyes)

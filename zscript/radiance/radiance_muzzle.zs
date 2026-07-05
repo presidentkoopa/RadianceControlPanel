@@ -1,8 +1,8 @@
 // ============================================================================
-// FILE: gitd_muzzle.zs  --  GITD muzzle-flash light (global toggle)
+// FILE: radiance_muzzle.zs  --  RADIANCE muzzle-flash light (global toggle)
 // ----------------------------------------------------------------------------
 // A brief golden-orange dynamic light that flares on the player when they fire,
-// then dies in a couple tics. GLOBAL toggle (gitd_muzzle_lights), NOT tied to a
+// then dies in a couple tics. GLOBAL toggle (radiance_muzzle_lights), NOT tied to a
 // preset -- though Blackout pairs with it beautifully.
 //
 // "Player fired" has no clean ZScript event, so we detect it the robust,
@@ -16,7 +16,7 @@
 // ============================================================================
 
 // The carrier actor: invisible, rides the firing player, emits the muzzle light.
-class GITD_MuzzleLight : Actor
+class RADIANCE_MuzzleLight : Actor
 {
     Actor host;          // the player pawn this rides
     Color mcol;
@@ -39,7 +39,7 @@ class GITD_MuzzleLight : Actor
             SetOrigin(host.pos + (0, 0, host.height * 0.6), true);
 
         mage++;
-        if (mage > mlife) { A_RemoveLight("gitd_muzzle"); Destroy(); return; }
+        if (mage > mlife) { A_RemoveLight("radiance_muzzle"); Destroy(); return; }
 
         double fade = 1.0 - double(mage) / double(mlife + 1);   // tic0 = full, smooth to 0
         if (fade > 1.0) fade = 1.0;
@@ -59,15 +59,15 @@ class GITD_MuzzleLight : Actor
         int finalRad = int(double(mrad) * fade);
         if (finalRad < 1) finalRad = 1;
         // flag 8 = LF_ATTENUATE: realistic falloff that LIGHTS the wall texture.
-        A_AttachLight("gitd_muzzle", 0, mcol, finalRad, 0, 8);  // point, attenuated
+        A_AttachLight("radiance_muzzle", 0, mcol, finalRad, 0, 8);  // point, attenuated
     }
 }
 
 // Per-tic driver: detects firing and flashes the muzzle light on each player.
-class GITD_MuzzleHandler : EventHandler
+class RADIANCE_MuzzleHandler : EventHandler
 {
     // one light per player, refreshed while firing
-    Array<GITD_MuzzleLight> mlights;
+    Array<RADIANCE_MuzzleLight> mlights;
     // per-player rising-edge tracker: was the muzzle-flash layer active last tic?
     Array<int> wasFlashing;   // 0/1 per player (int array; ZScript has no bool array literal need)
 
@@ -79,9 +79,9 @@ class GITD_MuzzleHandler : EventHandler
     // Muzzle colour: custom override, else default golden-orange.
     Color MuzzleColor()
     {
-        if (CB("gitd_muzzle_custom", false))
+        if (CB("radiance_muzzle_custom", false))
         {
-            CVar cc = CVar.FindCVar("gitd_muzzle_color");
+            CVar cc = CVar.FindCVar("radiance_muzzle_color");
             if (cc) { int pk = cc.GetInt(); return Color(255, (pk>>16)&0xFF, (pk>>8)&0xFF, pk&0xFF); }
         }
         return Color(255, 255, 190, 90);   // default golden-orange
@@ -90,7 +90,7 @@ class GITD_MuzzleHandler : EventHandler
 
     override void WorldTick()
     {
-        bool on = CB("gitd_muzzle_lights", false);
+        bool on = CB("radiance_muzzle_lights", false);
 
         // prune destroyed entries
         for (int i = mlights.Size() - 1; i >= 0; i--)
@@ -98,7 +98,7 @@ class GITD_MuzzleHandler : EventHandler
 
         if (!on) { wasFlashing.Clear(); return; }
 
-        int rad = CI("gitd_muzzle_size", 160);
+        int rad = CI("radiance_muzzle_size", 160);
         Color c = MuzzleColor();
 
         // make sure the per-player flash-edge tracker is sized
@@ -143,14 +143,14 @@ class GITD_MuzzleHandler : EventHandler
             // hand -- verified in weapons.zs), so this one check covers either hand.
             bool flashLive = (p.FindPSprite(PSP_FLASH) != null);
 
-            bool chaingunFiring = CB("gitd_muzzle_chaingun_strobe", true) && chaingunInHand
+            bool chaingunFiring = CB("radiance_muzzle_chaingun_strobe", true) && chaingunInHand
                                   && (p.refire > 0 || flashLive);
 
             bool isChaingun = chaingunFiring;          // strobe look only while chaingun-firing
             bool keepAlive  = newShot || chaingunFiring;
 
             // find an existing light riding this player
-            GITD_MuzzleLight existing = null;
+            RADIANCE_MuzzleLight existing = null;
             for (int i = 0; i < mlights.Size(); i++)
                 if (mlights[i] && mlights[i].host == p.mo) { existing = mlights[i]; break; }
 
@@ -163,7 +163,7 @@ class GITD_MuzzleHandler : EventHandler
 
             // no light yet -> spawn when a shot happens (or the chaingun is firing)
             if (!keepAlive) continue;
-            let nl = GITD_MuzzleLight(Actor.Spawn("GITD_MuzzleLight", p.mo.pos + (0,0, p.mo.height*0.6)));
+            let nl = RADIANCE_MuzzleLight(Actor.Spawn("RADIANCE_MuzzleLight", p.mo.pos + (0,0, p.mo.height*0.6)));
             if (nl) { nl.host = p.mo; nl.SetStrobe(isChaingun); nl.Flash(c, rad); mlights.Push(nl); }
         }
     }

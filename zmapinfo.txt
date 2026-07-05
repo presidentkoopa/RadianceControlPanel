@@ -1,10 +1,10 @@
 // ================================================================
-// Radiance Control Panel -- registers every GITD/glow handler.
+// Radiance Control Panel -- registers every RADIANCE/glow handler.
 // Includes 3 previously-dormant systems, now activated (fully built,
-// just never registered before): GITD_FlatGlow, GITD_ComboHandler,
-// GITD_Hud (off by default via gitd_hud_enabled -- see menudef.txt).
+// just never registered before): RADIANCE_FlatGlow, RADIANCE_ComboHandler,
+// RADIANCE_Hud (off by default via radiance_hud_enabled -- see menudef.txt).
 // ================================================================
 GameInfo
 {
-	AddEventHandlers = "GITD_DeathFXHandler", "HF_GlowHandler", "DarkDoomZ_Handler", "GITD_FlashHandler", "GITD_PresetHandler", "GITD_BloomHandler", "GITD_MuzzleHandler", "gy_EventHandler", "gy_VmAbortHandler", "VRBlackoutHandler", "GITD_JunkerScanHandler", "GITD_FlatGlow", "GITD_ComboHandler", "GITD_Hud", "RadianceControlHandler"
+	AddEventHandlers = "RADIANCE_DeathFXHandler", "HF_GlowHandler", "DarkDoomZ_Handler", "RADIANCE_FlashHandler", "RADIANCE_PresetHandler", "RADIANCE_BloomHandler", "RADIANCE_MuzzleHandler", "gy_EventHandler", "gy_VmAbortHandler", "VRBlackoutHandler", "RADIANCE_JunkerScanHandler", "RADIANCE_FlatGlow", "RADIANCE_ComboHandler", "RADIANCE_Hud", "RadianceControlHandler"
 }

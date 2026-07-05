@@ -1,5 +1,5 @@
 // ============================================================================
-// gitd_flatglow.zs -- floor + ceiling glow that washes IN FROM THE WALLS.
+// radiance_flatglow.zs -- floor + ceiling glow that washes IN FROM THE WALLS.
 // ----------------------------------------------------------------------------
 // The native wall glow climbs up from where the wall meets the FLOOR and down
 // from where it meets the CEILING. This does the mirror: it spreads that same
@@ -13,7 +13,7 @@
 //
 // (Positions cached as int X/Y arrays -- ZScript forbids Array<struct>.)
 // ============================================================================
-class GITD_FlatGlow : EventHandler
+class RADIANCE_FlatGlow : EventHandler
 {
     Array<int> mX, mY;   // wall (linedef) midpoint
     Array<int> sIdx;     // the sector that owns this wall (for its glow colour)
@@ -67,23 +67,23 @@ class GITD_FlatGlow : EventHandler
     override void WorldTick()
     {
         if (!ready) return;
-        if (!CB("gitd_flatglow", true))   return;
+        if (!CB("radiance_flatglow", true))   return;
         if (!CB("hf_glow_enabled", true)) return;
 
         let pi = players[consoleplayer];
         if (!pi || !pi.mo) return;
         double px = pi.mo.pos.x, py = pi.mo.pos.y;
 
-        double cull   = CF("gitd_flatglow_cull", 700.0);
+        double cull   = CF("radiance_flatglow_cull", 700.0);
         double cull2  = cull * cull;
-        double radius = CF("gitd_flatglow_radius", 128.0);   // how far the glow reaches in from the wall
-        int    surf   = CI("gitd_surfaces", 7);
+        double radius = CF("radiance_flatglow_radius", 128.0);   // how far the glow reaches in from the wall
+        int    surf   = CI("radiance_surfaces", 7);
         if ((surf & 3) == 0) return;   // neither floor nor ceiling selected
 
         // Floor/Ceiling Brightness slider: a multiplier on this inward surface
-        // wash, separate from the wall gradient (gitd_glow.zs SetGlowColor). At 0
+        // wash, separate from the wall gradient (radiance_glow.zs SetGlowColor). At 0
         // the wash is off -> "walls only"; turn it down if the floors blow out.
-        double surfGlow = CF("gitd_surface_glow", 1.0);
+        double surfGlow = CF("radiance_surface_glow", 1.0);
         if (surfGlow <= 0.0) return;
 
         bool   randomize = CB("hf_glow_random", false);

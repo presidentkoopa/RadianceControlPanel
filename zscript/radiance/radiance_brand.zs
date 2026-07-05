@@ -1,5 +1,5 @@
 // ============================================================================
-//  GITD "THE BRAND" -- the REVOLVER weapon-signature score effect.
+//  RADIANCE "THE BRAND" -- the REVOLVER weapon-signature score effect.
 //
 //  ONE heavy, oversized molten-white number FORGES at the wound (with a disc
 //  flash + a shockwave ring punching out), then RECOILS toward the player's eye
@@ -8,22 +8,22 @@
 //  smoke puff curls up and the whole thing fades. Weight + a hard stop.
 //
 //  Four pieces, all on the AddGlowPanel air-panel primitive (the proven
-//  gitd_dampop self-integrating one-shot actor pattern):
-//    GITD_Brand       -- the number (shape 13, heavy font), forge -> recoil -> settle
-//    GITD_BrandShape  -- the forge ring (shape 14) + disc flash (shape 15)
-//    GITD_BrandSmoke  -- the settle smoke puff (shape 20)
+//  radiance_dampop self-integrating one-shot actor pattern):
+//    RADIANCE_Brand       -- the number (shape 13, heavy font), forge -> recoil -> settle
+//    RADIANCE_BrandShape  -- the forge ring (shape 14) + disc flash (shape 15)
+//    RADIANCE_BrandSmoke  -- the settle smoke puff (shape 20)
 //
-//  Entry point: GITD_Brand.Fire(mon, dmg, pn) -- called from the combo handler
+//  Entry point: RADIANCE_Brand.Fire(mon, dmg, pn) -- called from the combo handler
 //  when the damaging weapon maps to the REVOLVER signature (Pistol / default).
 //
-//  Cvar: gitd_brand_enabled (master on/off).
+//  Cvar: radiance_brand_enabled (master on/off).
 //
 //  Tunables are placeholder FEEL values (the user dials these in VR); none of
 //  them change scoring -- this is presentation only.
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-//  GITD_Brand -- the single heavy number. Choreography by 'life' tics (35hz):
+//  RADIANCE_Brand -- the single heavy number. Choreography by 'life' tics (35hz):
 //    FORGE  (life 0..FORGE_END)   : at the wound, oversized + over-bright.
 //    RECOIL (..RECOIL_END)        : eases wound -> stopPos via cubic ease-OUT
 //                                   (fast start, hard decel = the recoil punch).
@@ -32,7 +32,7 @@
 //  stopPos is recomputed live each tic from the player's current eye so the
 //  number tracks the head a little even while flying (VR: the player may turn).
 // ----------------------------------------------------------------------------
-class GITD_Brand : Actor
+class RADIANCE_Brand : Actor
 {
 	int     dmg;
 	int     life;
@@ -68,7 +68,7 @@ class GITD_Brand : Actor
 		// spawn the curl of smoke exactly as the number parks (settle frame).
 		if (life == RECOIL_END + 1)
 		{
-			GITD_BrandSmoke s = GITD_BrandSmoke(Actor.Spawn("GITD_BrandSmoke", stopPos + (0, 0, 8.0)));
+			RADIANCE_BrandSmoke s = RADIANCE_BrandSmoke(Actor.Spawn("RADIANCE_BrandSmoke", stopPos + (0, 0, 8.0)));
 			if (s) { s.maxl = 14; s.rise = 1.4; }
 		}
 
@@ -127,13 +127,13 @@ class GITD_Brand : Actor
 	static void Fire(Actor mon, int dmg, int pn)
 	{
 		if (!mon) return;
-		let en = CVar.FindCVar("gitd_brand_enabled");
+		let en = CVar.FindCVar("radiance_brand_enabled");
 		if (en && !en.GetBool()) return;
 
 		// wound = monster mid-body (the forge point)
 		Vector3 wound = (mon.pos.x, mon.pos.y, mon.pos.z + mon.height * 0.55);
 
-		GITD_Brand b = GITD_Brand(Actor.Spawn("GITD_Brand", wound));
+		RADIANCE_Brand b = RADIANCE_Brand(Actor.Spawn("RADIANCE_Brand", wound));
 		if (b)
 		{
 			b.dmg      = dmg;
@@ -143,23 +143,23 @@ class GITD_Brand : Actor
 			Vector3 eye = pmo ? pmo.pos + (0, 0, pmo.height * 0.78) : wound + (0, 0, 48.0);
 			Vector3 toEye = level.Vec3Diff(wound, eye);
 			double d = toEye.Length();
-			b.stopPos = (d > 1.0) ? eye - (toEye / d) * GITD_Brand.STOP_GAP : wound;
+			b.stopPos = (d > 1.0) ? eye - (toEye / d) * RADIANCE_Brand.STOP_GAP : wound;
 		}
 
 		// FORGE flash: a quick disc (15) + an outward shockwave ring (14) at t0.
-		GITD_BrandShape disc = GITD_BrandShape(Actor.Spawn("GITD_BrandShape", wound));
+		RADIANCE_BrandShape disc = RADIANCE_BrandShape(Actor.Spawn("RADIANCE_BrandShape", wound));
 		if (disc) { disc.shape = 15; disc.maxl = 5;  disc.rad0 = 30.0; disc.rad1 = 30.0; }
-		GITD_BrandShape ring = GITD_BrandShape(Actor.Spawn("GITD_BrandShape", wound));
+		RADIANCE_BrandShape ring = RADIANCE_BrandShape(Actor.Spawn("RADIANCE_BrandShape", wound));
 		if (ring) { ring.shape = 14; ring.maxl = 12; ring.rad0 = 18.0; ring.rad1 = 78.0; }
 	}
 }
 
 // ----------------------------------------------------------------------------
-//  GITD_BrandShape -- a self-animating forge panel. Sweeps wipeProgress 0->1
+//  RADIANCE_BrandShape -- a self-animating forge panel. Sweeps wipeProgress 0->1
 //  across its life (the shader's animation lane) and lerps its radius. Sits at
 //  the wound, camera-facing. shape 14 = ring, 15 = disc.
 // ----------------------------------------------------------------------------
-class GITD_BrandShape : Actor
+class RADIANCE_BrandShape : Actor
 {
 	int    shape;          // 14 ring / 15 disc
 	int    life, maxl;
@@ -188,10 +188,10 @@ class GITD_BrandShape : Actor
 }
 
 // ----------------------------------------------------------------------------
-//  GITD_BrandSmoke -- the settle smoke puff. Drifts up, billows, fades. Shape 20
+//  RADIANCE_BrandSmoke -- the settle smoke puff. Drifts up, billows, fades. Shape 20
 //  (soft additive haze in the shader; wipeProgress = brightness, faded to 0).
 // ----------------------------------------------------------------------------
-class GITD_BrandSmoke : Actor
+class RADIANCE_BrandSmoke : Actor
 {
 	int    life, maxl;
 	double rise;   // per-tic upward drift (decays)

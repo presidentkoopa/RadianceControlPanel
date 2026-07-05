@@ -1,5 +1,5 @@
 // ============================================================================
-//  GITD_Hud -- the IN-AIR HUD. Health / ammo / score lifted off the 2D bottom
+//  RADIANCE_Hud -- the IN-AIR HUD. Health / ammo / score lifted off the 2D bottom
 //  bar into floating neon number-panels that ride in front of the player and
 //  update live. Built on the glow-panel digit primitive (camera-facing, dir 0,0).
 //  Score accumulates from the combo system's `hf_combo_bank` netevent.
@@ -10,7 +10,7 @@
 //     SCORE   upper-centre (gold)
 //  Placeholder distances/offsets/colours -- the user's to tune.
 // ============================================================================
-class GITD_Hud : EventHandler
+class RADIANCE_Hud : EventHandler
 {
 	int score;
 
@@ -24,7 +24,7 @@ class GITD_Hud : EventHandler
 		// Gate added on extraction: this had zero off-switch before (would float in front of
 		// the player's face unconditionally the instant it was ever registered). Off by default
 		// since the layout is explicitly a placeholder (see class comment) pending real tuning.
-		CVar en = CVar.FindCVar("gitd_hud_enabled");
+		CVar en = CVar.FindCVar("radiance_hud_enabled");
 		if (!en || !en.GetBool()) return;
 
 		let pmo = players[consoleplayer].mo;

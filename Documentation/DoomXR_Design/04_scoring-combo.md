@@ -6,7 +6,7 @@ rendered in the SDF glow system, that you sustain and bank.
 ## The chain, mechanically
 
 1. **You keep damaging a monster → a cumulative damage number CLIMBS**, drawn with the
-   GITD glow-shader digits floating above the monster's head (the same glow-number
+   RADIANCE glow-shader digits floating above the monster's head (the same glow-number
    primitive as the floor kill counter — VR-safe, no sprites, no dynamic light).
 2. **The chain has a break window.** Each tic without a hit ages the chain; the number
    visibly *dims* as it nears breaking ("hurry, it's slipping").
@@ -59,7 +59,7 @@ status; all cvar-weighted):
 | Curse-coin | bronze | lifts one curse tier on a held cursed weapon |
 
 Visuals are SNES scale-bob + a soft additive glow-child sharing the bit's sprite pivot
-(never a dynamic light, per the GITD rule). The **loot-vacuum** / **pouch-toss** gestures
+(never a dynamic light, per the RADIANCE rule). The **loot-vacuum** / **pouch-toss** gestures
 are the physical way you rake these in.
 
 ## Presentation is all SDF / glow

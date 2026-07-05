@@ -1,12 +1,12 @@
 // ============================================================================
-//  GITD "BRASS STORM" -- the SMG weapon-signature score effect.
+//  RADIANCE "BRASS STORM" -- the SMG weapon-signature score effect.
 //
 //  Every SMG hit flicks a tiny SHELL CASING out of the wound carrying that hit's
 //  damage number. The casing tumbles in 3D, arcs under gravity, BOUNCES off the
 //  floor (a bright shard 'clink' on each bounce), then comes to rest and fades,
 //  PILING near the player's feet. Because the SMG is rapid, dozens exist at once
 //  -- everything here is cheap, self-integrating one-shot actors on the glow-panel
-//  primitive (the proven gitd_dampop pattern).
+//  primitive (the proven radiance_dampop pattern).
 //
 //  A single persistent RUNNING TOTAL panel rides in the player's lower periphery,
 //  climbing as the spray lands and decaying a beat after fire stops.
@@ -15,13 +15,13 @@
 //    16 = CASING body (rounded capsule) with the damage number stamped on it.
 //    17 = SHARD flash (the bounce 'clink').
 //
-//  Cvars: gitd_brass_enabled (master), gitd_brass_total (running-total panel on/off).
+//  Cvars: radiance_brass_enabled (master), radiance_brass_total (running-total panel on/off).
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-//  GITD_BrassCasing -- one ejected shell. Self-integrating; spins, arcs, bounces.
+//  RADIANCE_BrassCasing -- one ejected shell. Self-integrating; spins, arcs, bounces.
 // ----------------------------------------------------------------------------
-class GITD_BrassCasing : Actor
+class RADIANCE_BrassCasing : Actor
 {
 	int    dmg;          // the damage number stamped on this casing
 	int    life;
@@ -61,7 +61,7 @@ class GITD_BrassCasing : Actor
 				bounces++;
 
 				// the 'clink' -- a tiny bright shard flash at the contact point
-				GITD_BrassShard.Fire(np, color(255, 255, 244, 210));
+				RADIANCE_BrassShard.Fire(np, color(255, 255, 244, 210));
 
 				// once it's barely moving, let it settle
 				if (abs(pvel.z) < 1.2 && bounces >= 1) { pvel.z = 0; bounces = 3; }
@@ -113,7 +113,7 @@ class GITD_BrassCasing : Actor
 	static void Fire(Actor mon, int dmg, int pn)
 	{
 		if (!mon) return;
-		let men = CVar.FindCVar("gitd_brass_enabled");
+		let men = CVar.FindCVar("radiance_brass_enabled");
 		if (men && !men.GetBool()) return;
 
 		// eject point: at the wound, mid-body.
@@ -121,7 +121,7 @@ class GITD_BrassCasing : Actor
 		              mon.pos.y + frandom[gbrass](-6.0, 6.0),
 		              mon.pos.z + mon.height * 0.55);
 
-		GITD_BrassCasing c = GITD_BrassCasing(Actor.Spawn("GITD_BrassCasing", ep));
+		RADIANCE_BrassCasing c = RADIANCE_BrassCasing(Actor.Spawn("RADIANCE_BrassCasing", ep));
 		if (!c) return;
 		c.dmg  = dmg;
 		c.maxl = 56;                                       // ~0.8s ceiling
@@ -158,15 +158,15 @@ class GITD_BrassCasing : Actor
 		c.spinRate = frandom[gbrass](0.22, 0.46) * (random[gbrass](0,1) == 0 ? 1.0 : -1.0);
 
 		// feed the running total in the player's periphery.
-		GITD_BrassTotal.Add(pn, dmg);
+		RADIANCE_BrassTotal.Add(pn, dmg);
 	}
 }
 
 // ----------------------------------------------------------------------------
-//  GITD_BrassShard -- the one-frame 'clink' flash when a casing hits the floor.
+//  RADIANCE_BrassShard -- the one-frame 'clink' flash when a casing hits the floor.
 //  Ultra-cheap: a couple of bright shard panels that fade in ~6 tics.
 // ----------------------------------------------------------------------------
-class GITD_BrassShard : Actor
+class RADIANCE_BrassShard : Actor
 {
 	int life, maxl;
 	double rad;
@@ -190,7 +190,7 @@ class GITD_BrassShard : Actor
 
 	static void Fire(Vector3 at, Color c)
 	{
-		GITD_BrassShard s = GITD_BrassShard(Actor.Spawn("GITD_BrassShard", at));
+		RADIANCE_BrassShard s = RADIANCE_BrassShard(Actor.Spawn("RADIANCE_BrassShard", at));
 		if (!s) return;
 		s.maxl = 6;
 		s.rad  = 5.0;
@@ -199,11 +199,11 @@ class GITD_BrassShard : Actor
 }
 
 // ----------------------------------------------------------------------------
-//  GITD_BrassTotal -- the persistent RUNNING-TOTAL panel. ONE static actor,
+//  RADIANCE_BrassTotal -- the persistent RUNNING-TOTAL panel. ONE static actor,
 //  re-created on demand. Rides at a fixed offset in the player's lower periphery,
 //  climbs as casings land, and decays a beat after fire stops.
 // ----------------------------------------------------------------------------
-class GITD_BrassTotal : Actor
+class RADIANCE_BrassTotal : Actor
 {
 	int total;          // current displayed spray total
 	int idleTics;       // tics since the last hit (drives the decay)
@@ -217,15 +217,15 @@ class GITD_BrassTotal : Actor
 	static void Add(int pn, int dmg)
 	{
 		if (pn < 0) return;
-		let ten = CVar.FindCVar("gitd_brass_total");
+		let ten = CVar.FindCVar("radiance_brass_total");
 		if (ten && !ten.GetBool()) return;
 
-		GITD_BrassTotal t = Find(pn);
+		RADIANCE_BrassTotal t = Find(pn);
 		if (!t)
 		{
 			Vector3 sp = (0, 0, 0);
 			if (pn < MAXPLAYERS && playeringame[pn] && players[pn].mo) sp = players[pn].mo.pos;
-			t = GITD_BrassTotal(Actor.Spawn("GITD_BrassTotal", sp));
+			t = RADIANCE_BrassTotal(Actor.Spawn("RADIANCE_BrassTotal", sp));
 			if (!t) return;
 			t.owner = pn;
 			t.total = 0;
@@ -235,11 +235,11 @@ class GITD_BrassTotal : Actor
 		t.idleTics = 0;
 	}
 
-	static GITD_BrassTotal Find(int pn)
+	static RADIANCE_BrassTotal Find(int pn)
 	{
-		ThinkerIterator it = ThinkerIterator.Create("GITD_BrassTotal");
-		GITD_BrassTotal t;
-		while (t = GITD_BrassTotal(it.Next()))
+		ThinkerIterator it = ThinkerIterator.Create("RADIANCE_BrassTotal");
+		RADIANCE_BrassTotal t;
+		while (t = RADIANCE_BrassTotal(it.Next()))
 			if (t.owner == pn) return t;
 		return null;
 	}

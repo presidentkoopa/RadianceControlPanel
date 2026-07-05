@@ -1,5 +1,5 @@
 // ============================================================================
-//  GITD_JunkerScan -- THE JUNKER SCAN ORCHESTRATOR.
+//  RADIANCE_JunkerScan -- THE JUNKER SCAN ORCHESTRATOR.
 //
 //  HackFraud's signature "hack-in-progress" overlay: a diagnostic scan that
 //  ASSEMBLES out of the in-air neon-panel primitives around a center point,
@@ -22,9 +22,9 @@
 //     22  SPECTRUM / heatmap strip
 //     23  SKULL sampler (wireframe->solid materialize -- the centerpiece)
 //
-//  DEMO: on WorldLoaded, GITD_JunkerScanHandler spawns ONE scan ~96u in front of
+//  DEMO: on WorldLoaded, RADIANCE_JunkerScanHandler spawns ONE scan ~96u in front of
 //  player 1 at eye height, facing them, and re-triggers the boot every few
-//  seconds so the user SEES it loop on boot in VR. Gated on gitd_junker_demo
+//  seconds so the user SEES it loop on boot in VR. Gated on radiance_junker_demo
 //  (default ON). Nothing here touches scoring -- presentation only.
 //
 //  ---- STRINGS DEPENDENCY (read me) ----------------------------------------
@@ -37,11 +37,11 @@
 //  dedicated readout (401 UNAUTHORIZED -> rolling SYNC digits -> 200 GRANTED),
 //  matching the HTTP-status read of the hack. The skull + all shapes + numeric
 //  columns still drive fully, so the boot choreography is visibly complete.
-//  When strings land, swap GITD_JunkerScan.mStatusCode for a string emit.
+//  When strings land, swap RADIANCE_JunkerScan.mStatusCode for a string emit.
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-//  GITD_JunkerScan -- the scan thinker. A play-scope Actor that lives for one
+//  RADIANCE_JunkerScan -- the scan thinker. A play-scope Actor that lives for one
 //  full boot cycle, advancing mTick each frame and RE-EMITTING the whole panel
 //  assembly (single-frame primitives) around mCenter, all camera-facing.
 //
@@ -57,7 +57,7 @@
 //                                            to their final vitals/threat/score.
 //  Then the handler re-fires after a gap so it loops on boot.
 // ----------------------------------------------------------------------------
-class GITD_JunkerScan : Actor
+class RADIANCE_JunkerScan : Actor
 {
 	int     mTick;        // tics alive
 	Vector3 mCenter;      // scan center in world space (panels arrange around this)
@@ -73,7 +73,7 @@ class GITD_JunkerScan : Actor
 	Default { +NOINTERACTION +NOGRAVITY +NOBLOCKMAP +DONTSPLASH +NOTONAUTOMAP; RenderStyle "None"; }
 	States { Spawn: TNT1 A 1; Loop; }
 
-	// ---- null-safe cvar helpers (pattern: gitd_combo.zs) ----
+	// ---- null-safe cvar helpers (pattern: radiance_combo.zs) ----
 	static bool   CBool(string n, bool d)  { CVar c = CVar.FindCVar(n); return c ? c.GetBool()  : d; }
 	static int    CInt (string n, int d)   { CVar c = CVar.FindCVar(n); return c ? c.GetInt()   : d; }
 	static double CFlt (string n, double d){ CVar c = CVar.FindCVar(n); return c ? c.GetFloat() : d; }
@@ -89,15 +89,15 @@ class GITD_JunkerScan : Actor
 	//  Spawn one scan centered at `center`. Pulls timing from cvars so the
 	//  user can dial the boot length in VR without touching code.
 	// ------------------------------------------------------------------
-	static GITD_JunkerScan Make(Vector3 center, int vitals, int threat, int scoreRead)
+	static RADIANCE_JunkerScan Make(Vector3 center, int vitals, int threat, int scoreRead)
 	{
-		let s = GITD_JunkerScan(Actor.Spawn("GITD_JunkerScan", center));
+		let s = RADIANCE_JunkerScan(Actor.Spawn("RADIANCE_JunkerScan", center));
 		if (!s) return null;
 		s.mCenter    = center;
 		s.mTick      = 0;
-		s.mSkullTics = max(8,  int(CFlt("gitd_junker_skulltime", 28.0)));   // wireframe->solid sweep
-		s.mSyncTics  = max(8,  CInt("gitd_junker_synctime", 30));           // SYNC scroll window
-		int linger   = max(8,  CInt("gitd_junker_grantedtime", 35));        // GRANTED hold window
+		s.mSkullTics = max(8,  int(CFlt("radiance_junker_skulltime", 28.0)));   // wireframe->solid sweep
+		s.mSyncTics  = max(8,  CInt("radiance_junker_synctime", 30));           // SYNC scroll window
+		int linger   = max(8,  CInt("radiance_junker_grantedtime", 35));        // GRANTED hold window
 		s.mLifeTics  = s.mSkullTics + s.mSyncTics + linger;
 		s.mVitals    = clamp(vitals,    0, 99999);
 		s.mThreat    = clamp(threat,    0, 99999);
@@ -112,7 +112,7 @@ class GITD_JunkerScan : Actor
 		if (mTick > mLifeTics) { Destroy(); return; }
 
 		// global master gate -- if the whole junker scan is disabled, draw nothing.
-		if (!CBool("gitd_junker_enabled", true)) return;
+		if (!CBool("radiance_junker_enabled", true)) return;
 
 		// phase boundaries
 		int p0End = mSkullTics;                 // end of BOOT/materialize
@@ -132,7 +132,7 @@ class GITD_JunkerScan : Actor
 		else            skullSweep = 1.0;
 		// shape 23, font irrelevant (fixed UV) -> raw 23; counter unused (0).
 		Color skullCol = Color(255, 60, 200, 255);   // neon cyan-violet skull
-		level.AddGlowPanel(skullCol, CFlt("gitd_junker_skullradius", 30.0),
+		level.AddGlowPanel(skullCol, CFlt("radiance_junker_skullradius", 30.0),
 			c.x, c.y, c.z, 23, skullSweep, 0.0, 0.0, 0);
 
 		// ============================ CORNER BRACKETS (frame) ========================
@@ -234,14 +234,14 @@ class GITD_JunkerScan : Actor
 }
 
 // ----------------------------------------------------------------------------
-//  GITD_JunkerScanHandler -- DEMO driver. On WorldLoaded, and then on a loop,
+//  RADIANCE_JunkerScanHandler -- DEMO driver. On WorldLoaded, and then on a loop,
 //  spawns ONE junker scan in front of player 1 at eye height so the user SEES
-//  the boot choreography on boot in VR. Gated on gitd_junker_demo (default ON).
+//  the boot choreography on boot in VR. Gated on radiance_junker_demo (default ON).
 //
 //  REGISTRATION: appended to the addeventhandlers line in `zmapinfo` -- an
 //  EventHandler is DEAD unless registered there. VERIFIED present.
 // ----------------------------------------------------------------------------
-class GITD_JunkerScanHandler : EventHandler
+class RADIANCE_JunkerScanHandler : EventHandler
 {
 	int mGap;   // tics until the next demo re-fire
 
@@ -258,8 +258,8 @@ class GITD_JunkerScanHandler : EventHandler
 	{
 		// DEMO HARD-DISABLED (user request): this used to spawn a looping junker-scan SDF ~96u in
 		// front of the player on map load and re-fire it every ~70 tics -- the "rapid firing SDF"
-		// spam. The scan itself is fully intact: GITD_JunkerScan.Make(center, vitals, threat, score)
+		// spam. The scan itself is fully intact: RADIANCE_JunkerScan.Make(center, vitals, threat, score)
 		// still works when the real HF brain calls it. Only this auto-demo loop is removed. To bring
-		// the demo back, restore this body from git and re-check gitd_junker_demo.
+		// the demo back, restore this body from git and re-check radiance_junker_demo.
 	}
 }

@@ -1,5 +1,5 @@
 // ============================================================================
-// gitd_bloom.zs  --  BloomBoost, reactive + budget-subsidy (2.6x merge)
+// radiance_bloom.zs  --  BloomBoost, reactive + budget-subsidy (2.6x merge)
 // ----------------------------------------------------------------------------
 // BloomBoost forces GZDoom's bloom (which only catches near-white pixels) to
 // trigger on DIM lights via a two-shader sandwich: a pre-pass lifts brightness/
@@ -17,7 +17,7 @@
 // pushes those into the shader. (The "GunBonsai pattern" the glow engine uses.)
 // ============================================================================
 
-class GITD_BloomHandler : EventHandler
+class RADIANCE_BloomHandler : EventHandler
 {
     // reactive envelope (play scope)
     double react, reactGoal;
@@ -43,7 +43,7 @@ class GITD_BloomHandler : EventHandler
 
     override void WorldThingDamaged(WorldEvent e)
     {
-        if (!CB("gitd_bloom_reactive", false)) return;
+        if (!CB("radiance_bloom_reactive", false)) return;
         let pmo = players[consoleplayer].mo;
         if (pmo && e.Thing == pmo) reactGoal = max(reactGoal, 0.8);
     }
@@ -51,21 +51,21 @@ class GITD_BloomHandler : EventHandler
     // ALL maths here (play scope), cached for UiTick.
     override void WorldTick()
     {
-        bool on = CB("gitd_bloom", true);
+        bool on = CB("radiance_bloom", true);
         bool bloomOn = (CI("gl_bloom", 0) + (on ? 1 : 0)) > 1;
         if (!bloomOn) { sEnabled = false; return; }
 
-        double gamma      = CF("gitd_bloomboost_gamma", 1.0);
-        double contrast   = CF("gitd_bloomboost_contrast", 100.0) * 0.01;
-        double brightness = CF("gitd_bloomboost_brightness", 0.0) * 0.01;
+        double gamma      = CF("radiance_bloomboost_gamma", 1.0);
+        double contrast   = CF("radiance_bloomboost_contrast", 100.0) * 0.01;
+        double brightness = CF("radiance_bloomboost_brightness", 0.0) * 0.01;
 
         // STRENGTH: an overall multiplier on the whole bloom push (new control,
         // replaces the old hero-light subsidy which this build no longer has).
-        double strength = clamp(CF("gitd_bloom_strength", 1.0), 0.0, 3.0);
+        double strength = clamp(CF("radiance_bloom_strength", 1.0), 0.0, 3.0);
         brightness *= strength;
         contrast    = 1.0 + (contrast - 1.0) * strength;
 
-        if (CB("gitd_bloom_reactive", false))
+        if (CB("radiance_bloom_reactive", false))
         {
             let pmo = players[consoleplayer].mo;
             if (pmo)
@@ -75,7 +75,7 @@ class GITD_BloomHandler : EventHandler
             }
             react += (reactGoal - react) * 0.35;
             reactGoal *= 0.90;
-            double rAmt = CF("gitd_bloom_react_amt", 0.35);
+            double rAmt = CF("radiance_bloom_react_amt", 0.35);
             brightness += react * rAmt;
             contrast   += react * rAmt * 0.4;
         }

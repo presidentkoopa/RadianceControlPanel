@@ -1,24 +1,24 @@
 // ============================================================================
-// GITD Death-FX -- the adaptable effect MACHINE.  (standalone GITD lighting demo)
+// RADIANCE Death-FX -- the adaptable effect MACHINE.  (standalone RADIANCE lighting demo)
 //
-// A death visual is a RECIPE (subclass GITD_DeathEffect, override Tick01, call
+// A death visual is a RECIPE (subclass RADIANCE_DeathEffect, override Tick01, call
 // PRIMITIVES). The handler resolves a CONTEXT (colour + tier + the dead monster)
 // and dispatches. The SILHOUETTE is the dead thing's OWN walk sprite (its frame
 // A/B), laid on the floor as a tinted cutout -- so an imp leaves an imp, a
 // zombieman leaves a zombieman, any mod's monster for free.
 //
-// COLOUR (cvar gitd_death_color_mode): 0 tier / 1 fixed (gitd_death_color) / 2 random.
+// COLOUR (cvar radiance_death_color_mode): 0 tier / 1 fixed (radiance_death_color) / 2 random.
 // All glow is REAL glow via the engine glow-spot channel -- ZERO dynamic lights.
 // ============================================================================
 //
 // COMMENTARY OVERVIEW (added documentation -- no code changed):
-//   This is the heart of GITD's "Glow In The Dark" effects layer. Three pieces:
-//     1. GITD_Palette          -- pure colour math (HSV, tier ramp, hashed random).
-//     2. GITD_DeathEffect + subclasses -- the effect RECIPES; each paints a glow
+//   This is the heart of RADIANCE's "Glow In The Dark" effects layer. Three pieces:
+//     1. RADIANCE_Palette          -- pure colour math (HSV, tier ramp, hashed random).
+//     2. RADIANCE_DeathEffect + subclasses -- the effect RECIPES; each paints a glow
 //        pattern over its short life via the EmitSpot() primitive, which feeds the
 //        engine's native glow-spot channel (level.AddGlowSpotWiped). NO dynamic
-//        lights are ever used -- this is GITD's absolute hard constraint.
-//     3. GITD_DeathFXHandler   -- the EventHandler that catches kills/hits/impacts,
+//        lights are ever used -- this is RADIANCE's absolute hard constraint.
+//     3. RADIANCE_DeathFXHandler   -- the EventHandler that catches kills/hits/impacts,
 //        resolves context, dispatches an effect, and owns the cross-cutting systems
 //        (kill-counter combo numbers, the battlefield-memory heat map, hit-lights,
 //        and the impact ring-buffer that keeps full-auto spray from hogging slots).
@@ -27,16 +27,16 @@
 //
 //   KEY ENGINE CONTRACT: level.AddGlowSpotWiped(color, radius, x, y, wipeType,
 //   progress, dirX, dirY, planeFlags). wipeType selects the shader pattern; the
-//   GITD rebuild added many (0 bloom, 1 seam, 2 stroke/bar, 3 ring, 4 hex-field,
+//   RADIANCE rebuild added many (0 bloom, 1 seam, 2 stroke/bar, 3 ring, 4 hex-field,
 //   5 hex-rings, 6 spiral, 7 square-rings, 8 star, 9 sunburst, 10 grid, 11 invert,
 //   13 glow-number). wipeType also smuggles the wall-pattern index as wallPat*100.
 //   There are only 16 engine glow-spot slots -- nearly every "cap"/"budget"/"ring-
 //   buffer" comment below exists to keep one feature from starving the others.
 // ============================================================================
 
-// GITD_Palette -- pure static colour math: HSV conversion, tier-ramp, and a
+// RADIANCE_Palette -- pure static colour math: HSV conversion, tier-ramp, and a
 // hashed pseudo-random hue. No state; just the colour vocabulary for all effects.
-class GITD_Palette
+class RADIANCE_Palette
 {
     // Convert HSV (hue 0..360, sat/val 0..1) to an opaque RGB Color. Standard
     // hue-sextant algorithm; used everywhere a vivid neon colour is needed.
@@ -75,11 +75,11 @@ class GITD_Palette
 }
 
 // ----------------------------------------------------------------------------
-// GITD_MonsterSilhouette -- the dead thing's OWN sprite, walk frames A/B cycling,
+// RADIANCE_MonsterSilhouette -- the dead thing's OWN sprite, walk frames A/B cycling,
 // laid flat on the floor, tinted (dark cutout, or glowing). Optionally drifts
 // forward (ghost walk). Self-fades over its life.
 // ----------------------------------------------------------------------------
-class GITD_MonsterSilhouette : Actor
+class RADIANCE_MonsterSilhouette : Actor
 {
     int    bornTic, lifeTics;
     int    sprId;          // the dead monster's sprite sheet (e.g. TROO)
@@ -98,9 +98,9 @@ class GITD_MonsterSilhouette : Actor
     }
     States { Spawn: TNT1 A -1; Stop; }   // invisible placeholder frame; the real sprite is forced each Tick
 
-    // Same probe as GITD_DeathEffect.FlatFit() (see that method for the full explanation), duplicated
+    // Same probe as RADIANCE_DeathEffect.FlatFit() (see that method for the full explanation), duplicated
     // here so a DRIFTING silhouette can re-run it as it walks onto a new step -- self-contained (own
-    // pos/CurSector/bodyHalf) since this actor has no reference back to the GITD_DeathEffect that
+    // pos/CurSector/bodyHalf) since this actor has no reference back to the RADIANCE_DeathEffect that
     // spawned it. Kept in lockstep with FlatFit(): 8-direction probe, 12-unit stride, 14-unit step
     // threshold, 0.35..1.0 clamp -- if one changes, change both.
     double FlatFitSelf()
@@ -147,13 +147,13 @@ class GITD_MonsterSilhouette : Actor
 }
 
 // ----------------------------------------------------------------------------
-// GITD_DeathEffect -- the base EVERY death visual extends.
+// RADIANCE_DeathEffect -- the base EVERY death visual extends.
 // ----------------------------------------------------------------------------
 // The recipe base class: holds the resolved context (tint/tier/dead monster/
 // facing), the per-style look knobs, and all the shared PRIMITIVES (EmitSpot,
 // Bloom, silhouette spawning, colour/intensity/gradient/pulse folding). A
 // subclass just sets lifeTics + reach in EffectSpawn() and paints in Tick01(t).
-class GITD_DeathEffect : Actor
+class RADIANCE_DeathEffect : Actor
 {
     int    bornTic, lifeTics;
     int    tier;
@@ -169,7 +169,7 @@ class GITD_DeathEffect : Actor
     bool   hasGrad;           // this effect gradients tint -> gradTo over its life
     double pulseHz, pulseDepth;   // brightness pulse (cycles over life, 0..1 depth)
     double styleInten;        // per-style intensity multiplier (1 = neutral)
-    bool   isImpact;          // spawned by a weapon impact (uses gitd_impact_size, no silhouette)
+    bool   isImpact;          // spawned by a weapon impact (uses radiance_impact_size, no silhouette)
 
     // Inert glow-emitter actor: never collides/interacts; RenderStyle "None" -> the actor itself draws nothing.
     Default { +NOBLOCKMAP; +NOGRAVITY; +NOINTERACTION; +DONTSPLASH; RenderStyle "None"; }
@@ -189,17 +189,17 @@ class GITD_DeathEffect : Actor
         int age = level.totaltime - bornTic;
         if (age >= lifeTics)
         {
-            // gitd_death_persist 1 = the mark stays settled for the whole level (no fade/destroy).
+            // radiance_death_persist 1 = the mark stays settled for the whole level (no fade/destroy).
             if (Persist() && CanPersist()) { Tick01(1.0); return; }   // re-paint at full-life t=1 forever
             EffectEnd(); if (silh) silh.Destroy(); Destroy(); return;
         }
         Tick01(double(age) / double(max(1, lifeTics)));   // normal path: drive the recipe with t in [0,1)
     }
-    // [GITD] gitd_death_persist ("Marks Last") is for MONSTER-DEATH marks only. Weapon IMPACT stamps
+    // [RADIANCE] radiance_death_persist ("Marks Last") is for MONSTER-DEATH marks only. Weapon IMPACT stamps
     // must NEVER persist -- otherwise every floor shot leaves a permanent glow-spot emitter, and after
     // ~16 shots they fill all 16 engine glow slots and the floor STOPS REACTING to new shots.
     // Whether THIS effect should persist for the level: only death marks (not impacts) and only if the cvar is on.
-    bool Persist() { if (isImpact) return false; let cv = CVar.FindCVar("gitd_death_persist"); return cv && cv.GetInt() == 1; }
+    bool Persist() { if (isImpact) return false; let cv = CVar.FindCVar("radiance_death_persist"); return cv && cv.GetInt() == 1; }
     virtual bool CanPersist() { return true; }   // one-shot effects (Detector sweep) override to false
 
     virtual void EffectSpawn() {}   // set lifeTics/reach + spawn silhouette; called once after context is stamped
@@ -218,24 +218,24 @@ class GITD_DeathEffect : Actor
         return localKeywords.Mid(s, e - s);
     }
 
-    // Plane targeting: gitd_death_planes 0 = Floor only, 1 = Floor + Ceiling. Floor-only is
+    // Plane targeting: radiance_death_planes 0 = Floor only, 1 = Floor + Ceiling. Floor-only is
     // encoded as a NEGATIVE radius, which the glow shader skips on ceilings & walls.
     double PlaneR(double radius) { return radius; }   // pass-through; plane targeting now via PlaneFlags()
     // True when the user wants the mark mirrored on the ceiling too (drives the extra ceiling silhouette).
-    bool PlanesBoth() { let cv = CVar.FindCVar("gitd_death_planes"); return cv && cv.GetInt() == 1; }
-    // [GITD] real plane targeting via the engine's FGlowSpot.planeFlags (rebuild shipped it).
-    // gitd_death_planes 0 = Floor only (default) -> flag 1; 1 = Floor+Ceiling -> flag 0 (both planes).
-    // gitd_death_planes -> FGlowSpot.planeFlags bits (floor=1, ceiling=2, wall=4; 0 = all surfaces).
+    bool PlanesBoth() { let cv = CVar.FindCVar("radiance_death_planes"); return cv && cv.GetInt() == 1; }
+    // [RADIANCE] real plane targeting via the engine's FGlowSpot.planeFlags (rebuild shipped it).
+    // radiance_death_planes 0 = Floor only (default) -> flag 1; 1 = Floor+Ceiling -> flag 0 (both planes).
+    // radiance_death_planes -> FGlowSpot.planeFlags bits (floor=1, ceiling=2, wall=4; 0 = all surfaces).
     //   0 = Floor only (1) | 1 = Floor+Ceiling (3) | 2 = Everything incl. walls (0)
-    int impactPlane;   // [GITD] weapon impacts: the surface actually struck (1 floor / 2 ceiling / 4 wall);
-                       // 0 = fall back to the gitd_death_planes cvar. Lets a CEILING shot glow the ceiling
+    int impactPlane;   // [RADIANCE] weapon impacts: the surface actually struck (1 floor / 2 ceiling / 4 wall);
+                       // 0 = fall back to the radiance_death_planes cvar. Lets a CEILING shot glow the ceiling
                        // and a FLOOR shot glow the floor, independent of the death-glow plane setting.
     // Translate the cvar into the engine's planeFlags bitmask passed to AddGlowSpotWiped.
     // When this is an impact that hit a known surface, glow THAT surface instead of obeying the cvar.
     int PlaneFlags()
     {
         if (impactPlane != 0) return impactPlane;   // an impact glows the exact surface it struck
-        let cv = CVar.FindCVar("gitd_death_planes");
+        let cv = CVar.FindCVar("radiance_death_planes");
         int m = cv ? cv.GetInt() : 0;
         if (m == 1) return 3;   // floor + ceiling
         if (m >= 2) return 0;   // everything: floor + ceiling + walls
@@ -244,11 +244,11 @@ class GITD_DeathEffect : Actor
 
     // ---- PRIMITIVES ----
     // EmitSpot is the single chokepoint for every glow spot: it packs the chosen WALL pattern
-    // (gitd_wall_pattern 0..5) into the wipeType as wallPat*100. The shader decodes it -> normal 2D
+    // (radiance_wall_pattern 0..5) into the wipeType as wallPat*100. The shader decodes it -> normal 2D
     // shape on floors/ceilings, vertical wall-mode (Pillar/Scan/Grid/Curtain/Embers/Bars) on walls.
     void EmitSpot(Color c, double radius, double x, double y, int wipeType, double progress, double dx, double dy, int planeFlags)
     {
-        let cv = CVar.FindCVar("gitd_wall_pattern");
+        let cv = CVar.FindCVar("radiance_wall_pattern");
         int wp = cv ? cv.GetInt() : 0;
         if (wp < 0) wp = 0;                       // clamp the wall-pattern selector to the valid 0..5 range
         if (wp > 5) wp = 5;
@@ -263,7 +263,7 @@ class GITD_DeathEffect : Actor
     { EmitSpot(c, PlaneR(radius), pos.x, pos.y, 1, progress, dirX, dirY, PlaneFlags()); }
 
     // copy the per-actor look onto a silhouette (shared by the floor and ceiling cutouts)
-    void ConfigSilh(GITD_MonsterSilhouette s, bool glowing, double driftSpeed)
+    void ConfigSilh(RADIANCE_MonsterSilhouette s, bool glowing, double driftSpeed)
     {
         s.bornTic  = bornTic;
         s.lifeTics = lifeTics;
@@ -309,7 +309,7 @@ class GITD_DeathEffect : Actor
         if (!mon) return;   // impacts (mon == null) get no silhouette
         double bodyHalf = (mon ? GetDefaultByType(mon.GetClass()).Height : 56.0) * 0.6;   // matches FlatFit()'s own formula
 
-        let s = GITD_MonsterSilhouette(Spawn("GITD_MonsterSilhouette", pos, NO_REPLACE));
+        let s = RADIANCE_MonsterSilhouette(Spawn("RADIANCE_MonsterSilhouette", pos, NO_REPLACE));
         if (!s) return;
         silh = s;
         ConfigSilh(s, glowing, driftSpeed);
@@ -318,14 +318,14 @@ class GITD_DeathEffect : Actor
         s.unfitScale = s.Scale.x;                            // FIX: remember the PRE-fit size, so a later
                                                               // re-probe while drifting rescales from the
                                                               // original size, not from an already-shrunk one
-        double fit = FlatFit();                              // [GITD] tuck the body in near stairs, no float
+        double fit = FlatFit();                              // [RADIANCE] tuck the body in near stairs, no float
         if (fit < 1.0) s.Scale = (s.Scale.x * fit, s.Scale.y * fit);
         if (s.CurSector) s.SetZ(s.CurSector.floorplane.ZatPoint(s.pos.xy) + 1.0);   // sit just above the floor
 
         // Floor + Ceiling mode: hang a matching cutout under the ceiling too.
         if (PlanesBoth() && s.CurSector)
         {
-            let cs = GITD_MonsterSilhouette(Spawn("GITD_MonsterSilhouette", pos, NO_REPLACE));
+            let cs = RADIANCE_MonsterSilhouette(Spawn("RADIANCE_MonsterSilhouette", pos, NO_REPLACE));
             if (cs)
             {
                 ConfigSilh(cs, glowing, driftSpeed);
@@ -348,8 +348,8 @@ class GITD_DeathEffect : Actor
     // ---- INTENSITY / GRADIENT / PULSE ----
     // Read a float cvar with a fallback default (the int-cvar twin is CIntDef on the handler).
     static double GFloat(string n, double def) { let c = CVar.FindCVar(n); return c ? c.GetFloat() : def; }
-    // Base reach in map units: impacts use gitd_impact_size, deaths use gitd_death_size (default 128).
-    int FxSize() { let cv = CVar.FindCVar(isImpact ? "gitd_impact_size" : "gitd_death_size"); return cv ? cv.GetInt() : 128; }
+    // Base reach in map units: impacts use radiance_impact_size, deaths use radiance_death_size (default 128).
+    int FxSize() { let cv = CVar.FindCVar(isImpact ? "radiance_impact_size" : "radiance_death_size"); return cv ? cv.GetInt() : 128; }
     // brightness: <=1 dims; >1 pushes white-hot (additive headroom is capped, so over-drive whitens)
     Color ApplyInten(Color c, double inten)
     {
@@ -363,23 +363,23 @@ class GITD_DeathEffect : Actor
     Color FxColor(double t, double k)
     {
         Color base;
-        let cm = CVar.FindCVar("gitd_death_color_mode");
+        let cm = CVar.FindCVar("radiance_death_color_mode");
         if (cm && cm.GetInt() == 3)
         {
             // RAINBOW: sweep the full hue wheel over the effect's life (offset per kill)
             double hue = t * 360.0 + double(killCount) * 47.0;        // 47-degree per-kill offset = adjacent kills differ
             hue -= 360.0 * floor(hue / 360.0);                        // wrap into 0..360
-            base = GITD_Palette.HSV(hue, 0.9, 1.0);
+            base = RADIANCE_Palette.HSV(hue, 0.9, 1.0);
         }
         else
         {
             // gradient endpoint: per-effect, or the global gradient cvar if enabled
             Color gto = tint; bool grad = hasGrad; if (hasGrad) gto = gradTo;
-            let gc = CVar.FindCVar("gitd_death_grad");
+            let gc = CVar.FindCVar("radiance_death_grad");
             if (gc && gc.GetInt() == 1)
             {
                 // global gradient overrides: unpack the packed 0xRRGGBB cvar as the gradient end colour
-                let cc = CVar.FindCVar("gitd_death_grad_color");
+                let cc = CVar.FindCVar("radiance_death_grad_color");
                 if (cc) { int v = cc.GetInt(); gto = Color(255, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF); grad = true; }
             }
             base = tint;
@@ -390,15 +390,15 @@ class GITD_DeathEffect : Actor
         }
         // intensity = global slider * per-style * this call's k
         double si = (styleInten > 0.0) ? styleInten : 1.0;
-        double inten = GFloat("gitd_death_intensity", 1.0) * si * k;
+        double inten = GFloat("radiance_death_intensity", 1.0) * si * k;
         // pulse: per-effect, or the global pulse cvar if enabled
         double pHz = pulseHz, pDepth = pulseDepth;
-        let pc = CVar.FindCVar("gitd_death_pulse");
-        if (pc && pc.GetInt() == 1) { pHz = GFloat("gitd_death_pulse_speed", 2.0); pDepth = GFloat("gitd_death_pulse_depth", 0.5); }
+        let pc = CVar.FindCVar("radiance_death_pulse");
+        if (pc && pc.GetInt() == 1) { pHz = GFloat("radiance_death_pulse_speed", 2.0); pDepth = GFloat("radiance_death_pulse_depth", 0.5); }
         // modulate intensity by a sine over life: stays in [1-depth, 1] so it dips/brightens, never goes dark
         if (pDepth > 0.0) inten *= (1.0 - pDepth) + pDepth * (0.5 + 0.5 * sin(t * 360.0 * pHz));
         // when persisting for the whole level, settle to a steady glow instead of fading to nothing
-        if (Persist() && CanPersist()) inten = max(inten, GFloat("gitd_death_intensity", 1.0) * si * 0.4);  // floor at 40%
+        if (Persist() && CanPersist()) inten = max(inten, GFloat("radiance_death_intensity", 1.0) * si * 0.4);  // floor at 40%
         return ApplyInten(base, inten);
     }
 
@@ -414,7 +414,7 @@ class GITD_DeathEffect : Actor
 
 // ---- STYLE 1: Death Pool -- glow blooms, dark monster silhouette inside, fades.
 // A glow pool blooms open under the corpse with the dead thing's black cutout inside it.
-class GITD_FX_DeathPool : GITD_DeathEffect
+class RADIANCE_FX_DeathPool : RADIANCE_DeathEffect
 {
     double maxReach;
     // Size the pool by tier and drop a dark (non-glowing) silhouette scaled to fit it.
@@ -435,7 +435,7 @@ class GITD_FX_DeathPool : GITD_DeathEffect
 
 // ---- STYLE 2: Seam Reveal -- narrow window wipes open, dark WALKING monster inside.
 // A tall directional window (seam) wipes open along the corpse's facing, revealing the walking cutout.
-class GITD_FX_SeamReveal : GITD_DeathEffect
+class RADIANCE_FX_SeamReveal : RADIANCE_DeathEffect
 {
     double maxReach, dirX, dirY, cx, cy;
     // Compute the seam direction/centre from the facing and size the window to the standing body length.
@@ -468,7 +468,7 @@ class GITD_FX_SeamReveal : GITD_DeathEffect
 // ---- STYLE 3: Ghost Walk (the favorite) -- the GLOWING monster silhouette keeps
 //      walking forward (its own sprite), trailing glow, then fades.
 // The user's favourite: a glowing ghost of the dead monster strides away leaving a trail of glow.
-class GITD_FX_GhostWalk : GITD_DeathEffect
+class RADIANCE_FX_GhostWalk : RADIANCE_DeathEffect
 {
     double maxReach, vx, vy, walkSpeed;
     // Spawn a GLOWING, forward-drifting silhouette and set its walk speed from the effect size.
@@ -494,7 +494,7 @@ class GITD_FX_GhostWalk : GITD_DeathEffect
 // ---- STYLE 4: Death-Ping -- a bright pulse detonates outward (tier-scaled).
 //      (v1 = filled expanding pulse; a true hollow ring is a ring-shader add.)
 // A hollow neon ring detonates outward from the corpse and fades as it expands (radar ping).
-class GITD_FX_DeathPing : GITD_DeathEffect
+class RADIANCE_FX_DeathPing : RADIANCE_DeathEffect
 {
     double maxReach;
     // Short life; ring radius scales with tier.
@@ -515,7 +515,7 @@ class GITD_FX_DeathPing : GITD_DeathEffect
 // ---- STYLE 5: Stylized X -- two neon strokes slash on (staggered), bright tips,
 //      settle-flash, slight per-kill rotation. Reads in chaos. Abstract mark (no silhouette).
 // Two crossed neon strokes snap on one after the other to form an X mark (the "angry signature X").
-class GITD_FX_StylizedX : GITD_DeathEffect
+class RADIANCE_FX_StylizedX : RADIANCE_DeathEffect
 {
     double reach, ax, ay, bx, by;
     // Build a FIXED diagonal X (two perpendicular stroke directions) with a tiny per-kill jitter.
@@ -544,7 +544,7 @@ class GITD_FX_StylizedX : GITD_DeathEffect
 // ---- STYLE 5: Hex Field -- a honeycomb of cells flips open in a wave from the corpse outward
 //      (the "flattened soccer ball unfolding"). One glow spot; the shader tiles + flips.
 // A honeycomb (wipeType 4) tiles outward, cells flipping open in a wave -- all from one glow spot.
-class GITD_FX_HexField : GITD_DeathEffect
+class RADIANCE_FX_HexField : RADIANCE_DeathEffect
 {
     double reach;
     override void EffectSpawn()
@@ -564,7 +564,7 @@ class GITD_FX_HexField : GITD_DeathEffect
 //      radius X. Negative-space flash: blue glow -> orange, near-black floor -> white. wipeType 11.
 //      Pure glow channel, ZERO dynamic lights.
 // Inverts the colour/light already under the hit point for a glitchy negative-space pop (impacts only).
-class GITD_FX_InvertImpact : GITD_DeathEffect
+class RADIANCE_FX_InvertImpact : RADIANCE_DeathEffect
 {
     double reach;
     override bool CanPersist() { return false; }   // an invert flash must never linger as a permanent emitter
@@ -580,7 +580,7 @@ class GITD_FX_InvertImpact : GITD_DeathEffect
 
 // ---- STYLE 6: Hex Rings -- concentric neon hexagon rings spin out from the corpse (the wild one).
 // Concentric hexagonal rings (wipeType 5) spin outward -- the flashy one.
-class GITD_FX_HexRings : GITD_DeathEffect
+class RADIANCE_FX_HexRings : RADIANCE_DeathEffect
 {
     double reach;
     override void EffectSpawn()
@@ -598,7 +598,7 @@ class GITD_FX_HexRings : GITD_DeathEffect
 
 // ---- STYLE 7: Spiral -- neon arms unwind and spin out from the corpse.
 // Neon spiral arms (wipeType 6) unwind and rotate out from the corpse.
-class GITD_FX_Spiral : GITD_DeathEffect
+class RADIANCE_FX_Spiral : RADIANCE_DeathEffect
 {
     double reach;
     override void EffectSpawn()
@@ -617,7 +617,7 @@ class GITD_FX_Spiral : GITD_DeathEffect
 // ---- GEOMETRIC SHAPES (single-spot shader patterns) ----
 // Each of the next four is a one-spot geometric shader pattern: build reach in EffectSpawn,
 // hold-then-fade in Tick01, dispatch with its own wipeType (7..10).
-class GITD_FX_SquareRings : GITD_DeathEffect   // concentric rotating squares
+class RADIANCE_FX_SquareRings : RADIANCE_DeathEffect   // concentric rotating squares
 {
     double reach;
     override void EffectSpawn() { lifeTics = 46; reach = double(FxSize()) * 1.2; }
@@ -627,7 +627,7 @@ class GITD_FX_SquareRings : GITD_DeathEffect   // concentric rotating squares
         EmitSpot(FxColor(t, fade), PlaneR(reach), pos.x, pos.y, 7, t, 1.0, 0.0, PlaneFlags());   // wipeType 7 = square rings
     }
 }
-class GITD_FX_Star : GITD_DeathEffect          // a growing 5-point star
+class RADIANCE_FX_Star : RADIANCE_DeathEffect          // a growing 5-point star
 {
     double reach;
     override void EffectSpawn() { lifeTics = 44; reach = double(FxSize()) * 1.1; }
@@ -637,7 +637,7 @@ class GITD_FX_Star : GITD_DeathEffect          // a growing 5-point star
         EmitSpot(FxColor(t, fade), PlaneR(reach), pos.x, pos.y, 8, t, 1.0, 0.0, PlaneFlags());   // wipeType 8 = star
     }
 }
-class GITD_FX_Sunburst : GITD_DeathEffect       // 12 rotating radial spokes
+class RADIANCE_FX_Sunburst : RADIANCE_DeathEffect       // 12 rotating radial spokes
 {
     double reach;
     override void EffectSpawn() { lifeTics = 44; reach = double(FxSize()) * 1.2; }
@@ -647,7 +647,7 @@ class GITD_FX_Sunburst : GITD_DeathEffect       // 12 rotating radial spokes
         EmitSpot(FxColor(t, fade), PlaneR(reach), pos.x, pos.y, 9, t, 1.0, 0.0, PlaneFlags());   // wipeType 9 = sunburst
     }
 }
-class GITD_FX_Grid : GITD_DeathEffect           // a checkerboard grid lighting up in a wave
+class RADIANCE_FX_Grid : RADIANCE_DeathEffect           // a checkerboard grid lighting up in a wave
 {
     double reach;
     override void EffectSpawn() { lifeTics = 50; reach = double(FxSize()) * 1.2; }
@@ -662,7 +662,7 @@ class GITD_FX_Grid : GITD_DeathEffect           // a checkerboard grid lighting 
 //      the front sweeps past gets a crazy neon mark stamped under it (radar lock).
 //      NOTE: limited by the 4-spot cap for now (pulse + a few marks at once); the rebuild lifts it.
 // Radar sweep: a long-range ring races out and stamps a persistent neon mark under every monster it passes.
-class GITD_FX_Detector : GITD_DeathEffect
+class RADIANCE_FX_Detector : RADIANCE_DeathEffect
 {
     double maxRange;
     Array<Actor> marked;   // monsters already tagged this sweep (avoid double-marking)
@@ -688,7 +688,7 @@ class GITD_FX_Detector : GITD_DeathEffect
             if ((a.pos.xy - pos.xy).Length() <= front)                        // inside the wavefront now
             {
                 marked.Push(a);
-                let mk = GITD_FX_DetectMark(Actor.Spawn("GITD_FX_DetectMark", a.pos, NO_REPLACE));
+                let mk = RADIANCE_FX_DetectMark(Actor.Spawn("RADIANCE_FX_DetectMark", a.pos, NO_REPLACE));
                 if (mk) { mk.bornTic = level.totaltime; mk.tint = tint; mk.killCount = killCount + marked.Size(); mk.EffectSpawn(); }  // vary shape per mark
             }
         }
@@ -697,7 +697,7 @@ class GITD_FX_Detector : GITD_DeathEffect
 
 // the crazy mark stamped under a detected monster (shape varies for chaos)
 // The neon mark dropped on each radar-detected monster; its shape rotates 4/5/6 for visual chaos.
-class GITD_FX_DetectMark : GITD_DeathEffect
+class RADIANCE_FX_DetectMark : RADIANCE_DeathEffect
 {
     double reach;
     int shape;
@@ -719,7 +719,7 @@ class GITD_FX_DetectMark : GITD_DeathEffect
 //      outward from the corpse (each bar's centre offset outward so it reads as a ray, not a full
 //      line), white-hot detonation flash. Rides the lifted 16-spot cap.
 // A multidirectional multicolour burst: up to 14 streaks shoot outward + a white detonation flash.
-class GITD_FX_Firework : GITD_DeathEffect
+class RADIANCE_FX_Firework : RADIANCE_DeathEffect
 {
     double reach;
     int n;
@@ -739,7 +739,7 @@ class GITD_FX_Firework : GITD_DeathEffect
             angs[i] = (360.0 / double(n)) * double(i) + double((killCount * 7 + i * 53) % 30) - 15.0;   // even spread +/-15deg jitter
             lens[i] = reach * (0.55 + 0.45 * double((i * 37) % 100) / 100.0);                            // varied length
             double hue = double(((i * 360) / n + killCount * 23) % 360);
-            cols[i] = GITD_Palette.HSV(hue, 0.95, 1.0);   // multicolour streaks
+            cols[i] = RADIANCE_Palette.HSV(hue, 0.95, 1.0);   // multicolour streaks
         }
     }
     // Each tic: grow every streak outward (offset so it reads as a ray), fade them, flash on detonation.
@@ -747,7 +747,7 @@ class GITD_FX_Firework : GITD_DeathEffect
     {
         double ease = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t);   // fast out
         double fade = (t < 0.25) ? 1.0 : (1.0 - (t - 0.25) / 0.75);
-        double inten = GFloat("gitd_death_intensity", 1.0);
+        double inten = GFloat("radiance_death_intensity", 1.0);
         for (int i = 0; i < n; i++)
         {
             double dx = cos(angs[i]), dy = sin(angs[i]);
@@ -760,13 +760,13 @@ class GITD_FX_Firework : GITD_DeathEffect
 }
 
 // ============================================================================
-// ACCENT EFFECTS -- a garnish layered on top of ANY primary style (cvar gitd_death_accent).
+// ACCENT EFFECTS -- a garnish layered on top of ANY primary style (cvar radiance_death_accent).
 // Spawned alongside the primary by the handler. Kept to a few spots so they coexist.
 // ============================================================================
 
 // forking electric bolts that crackle out and flash
 // Accent: short-lived electric-blue bolts that crackle outward; layered atop any primary death style.
-class GITD_FX_AccentLightning : GITD_DeathEffect
+class RADIANCE_FX_AccentLightning : RADIANCE_DeathEffect
 {
     double reach;
     double angs[5];
@@ -782,7 +782,7 @@ class GITD_FX_AccentLightning : GITD_DeathEffect
     {
         double ease = clamp(t / 0.25, 0.0, 1.0);
         double fade = (t < 0.5) ? 1.0 : (1.0 - (t - 0.5) / 0.5);
-        double inten = GFloat("gitd_death_intensity", 1.0);
+        double inten = GFloat("radiance_death_intensity", 1.0);
         Color c = Color(255, 165, 210, 255);   // electric blue-white
         for (int i = 0; i < 5; i++)
         {
@@ -796,7 +796,7 @@ class GITD_FX_AccentLightning : GITD_DeathEffect
 
 // hot fragments flung outward, fading
 // Accent: hot ember fragments flung outward along hashed angles, fading as they fly.
-class GITD_FX_AccentShrapnel : GITD_DeathEffect
+class RADIANCE_FX_AccentShrapnel : RADIANCE_DeathEffect
 {
     double reach;
     double angs[6];
@@ -812,7 +812,7 @@ class GITD_FX_AccentShrapnel : GITD_DeathEffect
     override void Tick01(double t)
     {
         double fade = 1.0 - t;
-        double inten = GFloat("gitd_death_intensity", 1.0);
+        double inten = GFloat("radiance_death_intensity", 1.0);
         Color c = Color(255, 255, 190, 110);   // hot ember
         for (int i = 0; i < 6; i++)
         {
@@ -824,7 +824,7 @@ class GITD_FX_AccentShrapnel : GITD_DeathEffect
 
 // fast tiny sparks scattering
 // Accent: a quick scatter of tiny bright sparks; the fastest, smallest garnish.
-class GITD_FX_AccentSparks : GITD_DeathEffect
+class RADIANCE_FX_AccentSparks : RADIANCE_DeathEffect
 {
     double reach;
     double angs[8];
@@ -839,7 +839,7 @@ class GITD_FX_AccentSparks : GITD_DeathEffect
     override void Tick01(double t)
     {
         double fade = (1.0 - t) * (1.0 - t);   // squared -> snappy fade
-        double inten = GFloat("gitd_death_intensity", 1.0);
+        double inten = GFloat("radiance_death_intensity", 1.0);
         Color c = Color(255, 255, 240, 180);   // bright white-gold
         for (int i = 0; i < 8; i++)
         {
@@ -850,10 +850,10 @@ class GITD_FX_AccentSparks : GITD_DeathEffect
 }
 
 // A brief DYNAMIC-LIGHT burst attached at a hit point -- the "burst of light on hitting enemies".
-// Needs gl_lights = true. GITD-coloured; animates its radius down over a short life (additive).
-// NOTE: this is the ONE place dynamic lights are used -- it is the HIT-light system (gitd_hitlight),
+// Needs gl_lights = true. RADIANCE-coloured; animates its radius down over a short life (additive).
+// NOTE: this is the ONE place dynamic lights are used -- it is the HIT-light system (radiance_hitlight),
 // deliberately separate from the glow-channel death/impact FX (which never use lights).
-class GITD_HitLight : Actor
+class RADIANCE_HitLight : Actor
 {
     Actor mon;            // the monster this light rides (one light per monster, refreshed on hit)
     Color lcol;
@@ -867,20 +867,20 @@ class GITD_HitLight : Actor
         Super.Tick();
         if (mon && mon.health > 0) SetOrigin(mon.pos + (0, 0, mon.height * 0.5), true);  // follow the body
         lage++;
-        if (lage > llife) { A_RemoveLight("gitd_hit"); Destroy(); return; }   // life over -> drop the light
+        if (lage > llife) { A_RemoveLight("radiance_hit"); Destroy(); return; }   // life over -> drop the light
         double f = 1.0 - double(lage) / double(max(1, llife));                // 1 -> 0 radius shrink factor
-        A_AttachLight("gitd_hit", 0, lcol, int(double(lrad) * f), 0, 2);   // type 0 = point, flag 2 = additive
+        A_AttachLight("radiance_hit", 0, lcol, int(double(lrad) * f), 0, 2);   // type 0 = point, flag 2 = additive
     }
 }
 
 // ----------------------------------------------------------------------------
-// GITD_DeathFXHandler -- catches kills, resolves context, dispatches.
+// RADIANCE_DeathFXHandler -- catches kills, resolves context, dispatches.
 // ----------------------------------------------------------------------------
 
 // Paints a glowing NUMBER on the floor at a kill (wipeType 13 draws the digits in-shader, centred by
 // construction). Orientation is LOCKED to the supplied facing via (dx,dy) -- exactly like the silhouette.
 // The kill-counter badge actor: re-emits a glow-number spot each tic, opening/holding/closing its ring.
-class GITD_SeamBox : Actor
+class RADIANCE_SeamBox : Actor
 {
     int age, life, packed;          // packed = number + colourIdx*131072
     double rad, dx, dy;
@@ -899,7 +899,7 @@ class GITD_SeamBox : Actor
         else prog = 1.0;                                             // holds
         prog = clamp(prog, 0.05, 1.0);
 
-        CVar billboardCVar = CVar.FindCVar("gitd_kill_billboard");
+        CVar billboardCVar = CVar.FindCVar("radiance_kill_billboard");
         if (billboardCVar && billboardCVar.GetBool())
         {
             int num = packed % 131072;
@@ -916,33 +916,33 @@ class GITD_SeamBox : Actor
 }
 
 // The central EventHandler: hooks world events (kill/damage/spawn/died/load/tick) and owns every
-// cross-cutting GITD system -- kill-counter combos, the heat map, hit-lights, and the impact ring-buffer.
-class GITD_DeathFXHandler : EventHandler
+// cross-cutting RADIANCE system -- kill-counter combos, the heat map, hit-lights, and the impact ring-buffer.
+class RADIANCE_DeathFXHandler : EventHandler
 {
     int killCount;
     int impactCount;
-    Array<GITD_HitLight> hitLights;   // active hit-lights -- one per monster, hard-capped
-    Array<GITD_DeathEffect> impactFX; // [GITD] live weapon-impact stamps, recycled oldest-first so full-auto spray always shows the newest (see TrackImpact)
+    Array<RADIANCE_HitLight> hitLights;   // active hit-lights -- one per monster, hard-capped
+    Array<RADIANCE_DeathEffect> impactFX; // [RADIANCE] live weapon-impact stamps, recycled oldest-first so full-auto spray always shows the newest (see TrackImpact)
 
-    // [GITD] Battlefield Memory heat map -- every kill burns into a spatial grid; the hottest cells
+    // [RADIANCE] Battlefield Memory heat map -- every kill burns into a spatial grid; the hottest cells
     // glow on a thermal gradient (blue = one death ... red/white-hot = a pile). Accumulates + persists.
     Array<int> hmX, hmY, hmCount;     // parallel arrays: grid cell X, cell Y, and accumulated kill count
-    int combo, lastKillTic, mapKills;   // [GITD] kill-counter combo streak + running map total (never resets)
+    int combo, lastKillTic, mapKills;   // [RADIANCE] kill-counter combo streak + running map total (never resets)
 
     // On a fresh (non-save) level load, zero every accumulator so nothing carries over between maps.
     override void WorldLoaded(WorldEvent e) { if (!e.IsSaveGame) { killCount = 0; impactCount = 0; hitLights.Clear(); impactFX.Clear(); hmX.Clear(); hmY.Clear(); hmCount.Clear(); combo = 0; lastKillTic = -1000; mapKills = 0; } }
 
-    // [GITD] Ring-buffer the live weapon-impact stamps. On each new impact: drop any that already
-    // faded, then if we're over gitd_impact_max, CONSUME the oldest. So a full-auto spray always
+    // [RADIANCE] Ring-buffer the live weapon-impact stamps. On each new impact: drop any that already
+    // faded, then if we're over radiance_impact_max, CONSUME the oldest. So a full-auto spray always
     // shows the newest impacts, the cost stays bounded (Quest-friendly), and impacts never hog all
     // 16 engine glow-spot slots. Death marks + kill numbers are NOT tracked here (they self-manage).
-    void TrackImpact(GITD_DeathEffect fx)
+    void TrackImpact(RADIANCE_DeathEffect fx)
     {
         if (!fx) return;
         for (int i = impactFX.Size() - 1; i >= 0; i--)
             if (!impactFX[i]) impactFX.Delete(i);          // prune already-destroyed stamps
         impactFX.Push(fx);
-        int cap = CIntDef("gitd_impact_max", 14);
+        int cap = CIntDef("radiance_impact_max", 14);
         if (cap < 1) cap = 1;
         while (impactFX.Size() > cap)                       // over budget -> recycle the oldest
         {
@@ -955,12 +955,12 @@ class GITD_DeathFXHandler : EventHandler
     // Console-command hook: the "randomize colors" button rolls all four colour cvars at once.
     override void NetworkProcess(ConsoleEvent e)
     {
-        if (e.Name == "gitd_randomize_colors")   // roll all four colour wheels at once
+        if (e.Name == "radiance_randomize_colors")   // roll all four colour wheels at once
         {
             RandColor("hf_glow_color_floor");
             RandColor("hf_glow_color_ceil");
-            RandColor("gitd_death_color");
-            RandColor("gitd_death_grad_color");
+            RandColor("radiance_death_color");
+            RandColor("radiance_death_grad_color");
         }
     }
     // Set a packed-RGB cvar to a random VIVID colour (each channel 48..255 to avoid muddy near-black).
@@ -985,19 +985,19 @@ class GITD_DeathFXHandler : EventHandler
     Color HeatColor(int cnt)
     {
         double t = clamp(double(cnt - 1) / 7.0, 0.0, 1.0);   // 1..8 kills maps to 0..1
-        return GITD_Palette.HSV(220.0 * (1.0 - t), 0.95, 1.0);   // blue (cold) -> red (white-hot)
+        return RADIANCE_Palette.HSV(220.0 * (1.0 - t), 0.95, 1.0);   // blue (cold) -> red (white-hot)
     }
     // Per-tic: when the heat map is enabled, paint up to a BUDGET of the hottest cells as glow spots.
     override void WorldTick()
     {
-        let cv = CVar.FindCVar("gitd_heatmap");
+        let cv = CVar.FindCVar("radiance_heatmap");
         if (!cv || !cv.GetBool()) return;
         int n = hmX.Size();
         if (n == 0) return;
-        // [GITD] cap the heatmap's share of the engine's 16 glow-spot slots so per-shot floor
+        // [RADIANCE] cap the heatmap's share of the engine's 16 glow-spot slots so per-shot floor
         // impacts + kill-numbers + death-FX are never starved out (the "floor effects stop after a
         // few shots" bug: the heatmap used to claim 10/16 every tic). Default 4 -> >=12 slots free.
-        int cs = 96, budget = clamp(CIntDef("gitd_heatmap_budget", 10), 0, 10);
+        int cs = 96, budget = clamp(CIntDef("radiance_heatmap_budget", 10), 0, 10);
         Array<int> used; used.Resize(n);
         for (int i = 0; i < n; i++) used[i] = 0;
         // selection-sort the top `budget` cells by count (small n, so a partial selection scan is fine)
@@ -1023,30 +1023,30 @@ class GITD_DeathFXHandler : EventHandler
     // On each kill: advance the combo (reset if past the window), pick Combo-vs-Total, and pop a glow number.
     void KillCombo(Actor mo)
     {
-        let kc = CVar.FindCVar("gitd_killcounter");
+        let kc = CVar.FindCVar("radiance_killcounter");
         if (!kc || !kc.GetBool()) return;
         mapKills++;                                          // running map total -- never resets (only on level load)
-        int window = CIntDef("gitd_kill_window", 90);        // combo reset window (tics) -- user-controllable
+        int window = CIntDef("radiance_kill_window", 90);        // combo reset window (tics) -- user-controllable
         if (level.maptime - lastKillTic > window) combo = 0; // too long since last kill -> streak broken
         combo++;
         lastKillTic = level.maptime;
-        int shown = (CIntDef("gitd_kill_count_mode", 0) == 1) ? mapKills : combo;   // 0 = Combo streak, 1 = Total map tally
-        int ms = CIntDef("gitd_kill_milestone", 25);
+        int shown = (CIntDef("radiance_kill_count_mode", 0) == 1) ? mapKills : combo;   // 0 = Combo streak, 1 = Total map tally
+        int ms = CIntDef("radiance_kill_milestone", 25);
         bool milestone = (ms > 0 && shown % ms == 0);        // every Nth = a gold pop
         Color col = NumberColor(shown, milestone);
         SpawnKillNumber(mo.pos, shown, col, milestone, mo.angle);   // glow number on the floor, locked to the monster's facing
     }
-    // Pick the floor-number colour per gitd_kill_color mode (gold / cyan / heat-by-combo / spectrum).
+    // Pick the floor-number colour per radiance_kill_color mode (gold / cyan / heat-by-combo / spectrum).
     Color NumberColor(int c, bool milestone)
     {
-        int mode = CIntDef("gitd_kill_color", 0);
+        int mode = CIntDef("radiance_kill_color", 0);
         if (mode == 1) return Color(255, 255, 200, 40);                                   // Gold
         if (mode == 2) return milestone ? Color(255, 255, 200, 40) : Color(255, 60, 210, 255);  // Cyan, gold on milestone
-        if (mode == 3) { double t = clamp(double(c) / 50.0, 0.0, 1.0); return GITD_Palette.HSV(220.0 * (1.0 - t), 0.95, 1.0); }  // Heatmap by combo
-        if (mode == 4) { double h = double(c) * 37.0; h -= 360.0 * floor(h / 360.0); return GITD_Palette.HSV(h, 0.9, 1.0); }     // Spectrum
+        if (mode == 3) { double t = clamp(double(c) / 50.0, 0.0, 1.0); return RADIANCE_Palette.HSV(220.0 * (1.0 - t), 0.95, 1.0); }  // Heatmap by combo
+        if (mode == 4) { double h = double(c) * 37.0; h -= 360.0 * floor(h / 360.0); return RADIANCE_Palette.HSV(h, 0.9, 1.0); }     // Spectrum
         return Color(255, 60, 210, 255);                                                  // Cyan (default)
     }
-    // Build a GITD_SeamBox badge sized to the digit count, packing the number+colour-index for the shader.
+    // Build a RADIANCE_SeamBox badge sized to the digit count, packing the number+colour-index for the shader.
     void SpawnKillNumber(Vector3 p, int num, Color col, bool big, double faceAngle)
     {
         int len = String.Format("%d", num).Length();                   // digit count -> badge width
@@ -1057,17 +1057,17 @@ class GITD_DeathFXHandler : EventHandler
         double aspect = halfW / halfH;
         double diag = sqrt(halfW * halfW + halfH * halfH);            // bounding radius for the glow spot
         Vector2 rd = (cos(faceAngle), sin(faceAngle));                 // LOCKED to the monster's facing, like the silhouette
-        let sb = GITD_SeamBox(Actor.Spawn("GITD_SeamBox", (p.x, p.y, p.z)));
+        let sb = RADIANCE_SeamBox(Actor.Spawn("RADIANCE_SeamBox", (p.x, p.y, p.z)));
         if (sb)
         {
             sb.Setup(diag, packn, rd.x * aspect, rd.y * aspect, big);   // bake the aspect into the facing vector
             sb.vcol = col;                                              // Visual color for billboard mode
         }
     }
-    // The shader palette index that pairs with each gitd_kill_color mode (badge tint).
+    // The shader palette index that pairs with each radiance_kill_color mode (badge tint).
     int NumberColorIdx(bool big)
     {
-        int mode = CIntDef("gitd_kill_color", 0);
+        int mode = CIntDef("radiance_kill_color", 0);
         if (mode == 1) return 1;                       // Gold
         if (mode == 2) return big ? 1 : 0;             // Cyan, gold on milestone
         if (mode == 3) return 2;                       // Heatmap -> red badge
@@ -1077,10 +1077,10 @@ class GITD_DeathFXHandler : EventHandler
 
     // BURST OF LIGHT ON HITTING ENEMIES -- weapon-agnostic. ONE light per monster (refreshed, never
     // stacked), follows the body, distance-culled, hard-capped -> spam-proof in a horde.
-    // Damage hook: attach/refresh one GITD_HitLight on the struck monster (the hit-flash system).
+    // Damage hook: attach/refresh one RADIANCE_HitLight on the struck monster (the hit-flash system).
     override void WorldThingDamaged(WorldEvent e)
     {
-        let cv = CVar.FindCVar("gitd_hitlight");
+        let cv = CVar.FindCVar("radiance_hitlight");
         if (!cv || cv.GetInt() == 0) return;
         Actor mo = e.Thing;
         if (!mo || !mo.bIsMonster) return;
@@ -1090,7 +1090,7 @@ class GITD_DeathFXHandler : EventHandler
         if (pl && (mo.pos - pl.pos).Length() > 1800.0) return;
 
         // prune dead entries + find a light already riding this monster
-        GITD_HitLight existing = null;
+        RADIANCE_HitLight existing = null;
         for (int i = hitLights.Size() - 1; i >= 0; i--)
         {
             let hl = hitLights[i];
@@ -1099,18 +1099,18 @@ class GITD_DeathFXHandler : EventHandler
         }
         impactCount++;
         Color c = ModeColor(HealthTier(mo), impactCount);
-        let sc = CVar.FindCVar("gitd_hitlight_size"); int rad = sc ? sc.GetInt() : 140;
+        let sc = CVar.FindCVar("radiance_hitlight_size"); int rad = sc ? sc.GetInt() : 140;
 
         if (existing) { existing.Refresh(c, rad); return; }   // already lit -> refresh, no second light
         if (hitLights.Size() >= 28) return;                   // hard cap (only reachable on a rocket-into-a-pile)
-        let nl = GITD_HitLight(Actor.Spawn("GITD_HitLight", mo.pos + (0, 0, mo.height * 0.5)));
+        let nl = RADIANCE_HitLight(Actor.Spawn("RADIANCE_HitLight", mo.pos + (0, 0, mo.height * 0.5)));
         if (nl) { nl.mon = mo; nl.Refresh(c, rad); hitLights.Push(nl); }
     }
 
-    // [GITD] Which surface did this shot strike? Compare the puff's z to the floor/ceiling planes
+    // [RADIANCE] Which surface did this shot strike? Compare the puff's z to the floor/ceiling planes
     // beneath it so a weapon impact can glow the EXACT surface it hit (ceiling shot -> ceiling glow),
     // independent of the death-glow plane setting. Returns 1 floor / 2 ceiling / 0 = unknown (wall or
-    // mid-air -> caller falls back to the gitd_death_planes cvar).
+    // mid-air -> caller falls back to the radiance_death_planes cvar).
     int DetectHitPlane(Actor hit)
     {
         if (!hit || !hit.CurSector) return 0;
@@ -1125,14 +1125,14 @@ class GITD_DeathFXHandler : EventHandler
 
     // SPARK IMPACTS -- catch every bullet puff as it spawns (wall/floor/ceiling hit, ANY weapon)
     // and drop the chosen HF burst there. Robust whether or not `replaces` works.
-    // Spawn hook: when a BulletPuff appears, drop the chosen HF spark burst AND/OR a GITD glow-shape impact.
+    // Spawn hook: when a BulletPuff appears, drop the chosen HF spark burst AND/OR a RADIANCE glow-shape impact.
     override void WorldThingSpawned(WorldEvent e)
     {
         Actor a = e.Thing;
         if (!a || !(a is "BulletPuff")) return;
 
         // (1) SPARK BURST (HF sprites) at the hit point
-        int st = CIntDef("gitd_impactspark", 0);
+        int st = CIntDef("radiance_impactspark", 0);
         if (st > 0)
         {
             // st 7 = "Random": hash position+time into a 1..6 type so each hit varies; else use the fixed type
@@ -1140,19 +1140,19 @@ class GITD_DeathFXHandler : EventHandler
             Actor.Spawn(HF_ImpactTypePicker.ClassFor(t), a.pos, ALLOW_REPLACE);
         }
 
-        // (2) GLOW-SHAPE impact (gitd_impact_style) -- now works for HITSCAN too (floor/ceiling)
-        int istyle = CIntDef("gitd_impact_style", 0);
+        // (2) GLOW-SHAPE impact (radiance_impact_style) -- now works for HITSCAN too (floor/ceiling)
+        int istyle = CIntDef("radiance_impact_style", 0);
         if (istyle > 0)
         {
             impactCount++;
             int s = (istyle == 11) ? 1 + (impactCount * 7) % 6 : istyle;   // 11 = Random (shapes 1-6); 12 = Inverse (pass through)
-            let fx = GITD_DeathEffect(Actor.Spawn(ImpactClass(s), a.pos));
+            let fx = RADIANCE_DeathEffect(Actor.Spawn(ImpactClass(s), a.pos));
             if (fx)
             {
                 fx.isImpact = true; fx.impactPlane = DetectHitPlane(a); fx.bornTic = level.totaltime; fx.tier = 0;   // impact context: no tier, no monster; glow the struck surface
                 fx.tint = ModeColor(0, impactCount); fx.faceAngle = a.angle;
                 fx.killCount = impactCount; fx.mon = null; fx.EffectSpawn();
-                TrackImpact(fx);   // [GITD] recycle oldest past the cap -> full-auto spray stays alive
+                TrackImpact(fx);   // [RADIANCE] recycle oldest past the cap -> full-auto spray stays alive
             }
         }
     }
@@ -1162,10 +1162,10 @@ class GITD_DeathFXHandler : EventHandler
     {
         Actor mo = e.Thing;
         if (!mo) return;
-        if (mo.bMissile) { SpawnImpactFX(mo); return; }   // a projectile hit something -> impact stamp (gitd_impact_style)
-        if (mo.bIsMonster) HeatAccumulate(mo.pos.x, mo.pos.y);   // [GITD] battlefield memory: log every monster kill
-        if (mo.bIsMonster) KillCombo(mo);                         // [GITD] kill-counter combo number
-        let cv = CVar.FindCVar("gitd_death_enabled");
+        if (mo.bMissile) { SpawnImpactFX(mo); return; }   // a projectile hit something -> impact stamp (radiance_impact_style)
+        if (mo.bIsMonster) HeatAccumulate(mo.pos.x, mo.pos.y);   // [RADIANCE] battlefield memory: log every monster kill
+        if (mo.bIsMonster) KillCombo(mo);                         // [RADIANCE] kill-counter combo number
+        let cv = CVar.FindCVar("radiance_death_enabled");
         if (cv && !cv.GetBool()) return;                          // death FX globally off (heat map/counter still ran above)
         if (!mo.bIsMonster) return;
         killCount++;
@@ -1173,7 +1173,7 @@ class GITD_DeathFXHandler : EventHandler
         int tier; string kw; Color tint;
         [tier, kw, tint] = Resolve(mo);                           // resolve the death context
 
-        let fx = GITD_DeathEffect(Actor.Spawn(PickEffect(mo, kw, tier), mo.pos));
+        let fx = RADIANCE_DeathEffect(Actor.Spawn(PickEffect(mo, kw, tier), mo.pos));
         if (fx)
         {
             // stamp the resolved context onto the effect, THEN fire EffectSpawn (which reads it)
@@ -1187,12 +1187,12 @@ class GITD_DeathFXHandler : EventHandler
             fx.EffectSpawn();   // now that the context (mon/tint/face) is set
         }
 
-        // ACCENT layer: an optional garnish fired alongside the primary (gitd_death_accent).
-        int acc = CIntDef("gitd_death_accent", 0);
+        // ACCENT layer: an optional garnish fired alongside the primary (radiance_death_accent).
+        int acc = CIntDef("radiance_death_accent", 0);
         if (acc > 0)
         {
-            string ac = (acc == 1) ? "GITD_FX_AccentLightning" : (acc == 2) ? "GITD_FX_AccentShrapnel" : "GITD_FX_AccentSparks";
-            let ax = GITD_DeathEffect(Actor.Spawn(ac, mo.pos));
+            string ac = (acc == 1) ? "RADIANCE_FX_AccentLightning" : (acc == 2) ? "RADIANCE_FX_AccentShrapnel" : "RADIANCE_FX_AccentSparks";
+            let ax = RADIANCE_DeathEffect(Actor.Spawn(ac, mo.pos));
             if (ax)
             {
                 ax.bornTic = level.totaltime; ax.tier = tier; ax.tint = tint; ax.localKeywords = kw;
@@ -1204,9 +1204,9 @@ class GITD_DeathFXHandler : EventHandler
     // Choose the death-effect class: explicit class-name cvar wins, else style index (14 = random-per-kill).
     string PickEffect(Actor mo, string kw, int tier)
     {
-        let sc = CVar.FindCVar("gitd_death_style_class");
+        let sc = CVar.FindCVar("radiance_death_style_class");
         if (sc) { string cn = sc.GetString(); if (cn.Length() > 0 && cn != "0") return cn; }   // direct class override
-        int st = CIntDef("gitd_death_style", 0);
+        int st = CIntDef("radiance_death_style", 0);
         if (st == 14)   // Random: a different style every kill (hash the kill count)
         {
             int h = killCount * 374761393 + 668265263; h = (h ^ (h >> 13)) * 1274126177; h = h ^ (h >> 16);  // integer hash
@@ -1219,20 +1219,20 @@ class GITD_DeathFXHandler : EventHandler
     {
         switch (s)
         {
-            case 1:  return "GITD_FX_SeamReveal";
-            case 2:  return "GITD_FX_GhostWalk";
-            case 3:  return "GITD_FX_DeathPing";
-            case 4:  return "GITD_FX_StylizedX";
-            case 5:  return "GITD_FX_HexField";
-            case 6:  return "GITD_FX_HexRings";
-            case 7:  return "GITD_FX_Spiral";
-            case 8:  return "GITD_FX_Detector";
-            case 9:  return "GITD_FX_Firework";
-            case 10: return "GITD_FX_SquareRings";
-            case 11: return "GITD_FX_Star";
-            case 12: return "GITD_FX_Sunburst";
-            case 13: return "GITD_FX_Grid";
-            default: return "GITD_FX_DeathPool";   // 0 / unknown = the default pool
+            case 1:  return "RADIANCE_FX_SeamReveal";
+            case 2:  return "RADIANCE_FX_GhostWalk";
+            case 3:  return "RADIANCE_FX_DeathPing";
+            case 4:  return "RADIANCE_FX_StylizedX";
+            case 5:  return "RADIANCE_FX_HexField";
+            case 6:  return "RADIANCE_FX_HexRings";
+            case 7:  return "RADIANCE_FX_Spiral";
+            case 8:  return "RADIANCE_FX_Detector";
+            case 9:  return "RADIANCE_FX_Firework";
+            case 10: return "RADIANCE_FX_SquareRings";
+            case 11: return "RADIANCE_FX_Star";
+            case 12: return "RADIANCE_FX_Sunburst";
+            case 13: return "RADIANCE_FX_Grid";
+            default: return "RADIANCE_FX_DeathPool";   // 0 / unknown = the default pool
         }
     }
 
@@ -1244,35 +1244,35 @@ class GITD_DeathFXHandler : EventHandler
     }
 
     // colour from the active colour-mode, no monster required (deaths AND impacts use this)
-    // gitd_death_color_mode: 0 = tier ramp, 1 = fixed cvar colour, 2 = hashed random, 3 = per-seed spectrum.
+    // radiance_death_color_mode: 0 = tier ramp, 1 = fixed cvar colour, 2 = hashed random, 3 = per-seed spectrum.
     Color ModeColor(int tier, int seed)
     {
-        int mode = CIntDef("gitd_death_color_mode", 0);
+        int mode = CIntDef("radiance_death_color_mode", 0);
         if (mode == 1)
         {
-            int v = CIntDef("gitd_death_color", 0x00C8FF);   // packed 0xRRGGBB, default cyan
+            int v = CIntDef("radiance_death_color", 0x00C8FF);   // packed 0xRRGGBB, default cyan
             return Color(255, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF);
         }
-        if (mode == 2) return GITD_Palette.Random(seed);
-        if (mode == 3) { double h = double(seed) * 47.0; h -= 360.0 * floor(h / 360.0); return GITD_Palette.HSV(h, 0.9, 1.0); }  // 47deg per-seed spectrum step
-        return GITD_Palette.ForTier(tier, 4);   // default: tier ramp
+        if (mode == 2) return RADIANCE_Palette.Random(seed);
+        if (mode == 3) { double h = double(seed) * 47.0; h -= 360.0 * floor(h / 360.0); return RADIANCE_Palette.HSV(h, 0.9, 1.0); }  // 47deg per-seed spectrum step
+        return RADIANCE_Palette.ForTier(tier, 4);   // default: tier ramp
     }
 
-    // a weapon impact stamps the chosen GITD shape at the hit point (no monster, no silhouette).
+    // a weapon impact stamps the chosen RADIANCE shape at the hit point (no monster, no silhouette).
     // Projectile-impact path (called from WorldThingDied for missiles); mirrors the puff path's glow stamp.
     void SpawnImpactFX(Actor missile)
     {
-        // [GITD] SPARK BURST on the projectile impact too. Hitscan gets this via the BulletPuff hook,
+        // [RADIANCE] SPARK BURST on the projectile impact too. Hitscan gets this via the BulletPuff hook,
         // but plasma/rockets never spawn a puff -- so without this they produced no spark reaction.
         // Done before the glow-shape early-return so sparks fire even when impact SHAPES are off.
-        int sp = CIntDef("gitd_impactspark", 0);
+        int sp = CIntDef("radiance_impactspark", 0);
         if (sp > 0)
         {
             int t = (sp >= 7) ? 1 + (level.maptime + int(missile.pos.x) * 3 + int(missile.pos.y) * 7) % 6 : sp;
             Actor.Spawn(HF_ImpactTypePicker.ClassFor(t), missile.pos, ALLOW_REPLACE);
         }
 
-        int istyle = CIntDef("gitd_impact_style", 0);
+        int istyle = CIntDef("radiance_impact_style", 0);
         if (istyle <= 0) return;                 // glow shape off (sparks already handled above)
         impactCount++;
         if (istyle == 11)                        // Random impact shape
@@ -1280,7 +1280,7 @@ class GITD_DeathFXHandler : EventHandler
             int h = impactCount * 374761393 + 668265263; h = (h ^ (h >> 13)) * 1274126177; h = h ^ (h >> 16);  // integer hash
             istyle = 1 + (h & 0x7FFFFFFF) % 10;
         }
-        let fx = GITD_DeathEffect(Actor.Spawn(ImpactClass(istyle), missile.pos));
+        let fx = RADIANCE_DeathEffect(Actor.Spawn(ImpactClass(istyle), missile.pos));
         if (fx)
         {
             fx.isImpact  = true;
@@ -1292,7 +1292,7 @@ class GITD_DeathFXHandler : EventHandler
             fx.killCount = impactCount;          // independent variety from kills
             fx.mon       = null;                 // -> no silhouette
             fx.EffectSpawn();
-            TrackImpact(fx);   // [GITD] recycle oldest past the cap -> full-auto spray stays alive
+            TrackImpact(fx);   // [RADIANCE] recycle oldest past the cap -> full-auto spray stays alive
         }
     }
     // Map an impact-style index to its glow-effect class (note the index<->class mapping differs from
@@ -1301,17 +1301,17 @@ class GITD_DeathFXHandler : EventHandler
     {
         switch (istyle)
         {
-            case 2:  return "GITD_FX_DeathPing";   // ring
-            case 3:  return "GITD_FX_StylizedX";
-            case 4:  return "GITD_FX_HexField";
-            case 5:  return "GITD_FX_HexRings";
-            case 6:  return "GITD_FX_Spiral";
-            case 7:  return "GITD_FX_SquareRings";
-            case 8:  return "GITD_FX_Star";
-            case 9:  return "GITD_FX_Sunburst";
-            case 10: return "GITD_FX_Grid";
-            case 12: return "GITD_FX_InvertImpact";   // inverse glow within radius
-            default: return "GITD_FX_DeathPool";   // 1 = glow
+            case 2:  return "RADIANCE_FX_DeathPing";   // ring
+            case 3:  return "RADIANCE_FX_StylizedX";
+            case 4:  return "RADIANCE_FX_HexField";
+            case 5:  return "RADIANCE_FX_HexRings";
+            case 6:  return "RADIANCE_FX_Spiral";
+            case 7:  return "RADIANCE_FX_SquareRings";
+            case 8:  return "RADIANCE_FX_Star";
+            case 9:  return "RADIANCE_FX_Sunburst";
+            case 10: return "RADIANCE_FX_Grid";
+            case 12: return "RADIANCE_FX_InvertImpact";   // inverse glow within radius
+            default: return "RADIANCE_FX_DeathPool";   // 1 = glow
         }
     }
 
@@ -1353,8 +1353,8 @@ class GITD_DeathFXHandler : EventHandler
 //   5  Scorch      -- dark smoke billow + ember glow, lingering (heavy feel)
 //   6  Firecracker -- chaotic multi-pop: several offset mini-bursts (chained)
 // ============================================================================
-// NOTE: unlike the GITD glow effects above, these HF bursts ARE real sprite
-// actors (additive puffs/smoke/embers) -- they are GITD's hard "no dynamic
+// NOTE: unlike the RADIANCE glow effects above, these HF bursts ARE real sprite
+// actors (additive puffs/smoke/embers) -- they are RADIANCE's hard "no dynamic
 // lights" rule still holds (RenderStyle Add, not a light), just sprite-based.
 
 // ---- shared bits -----------------------------------------------------------
@@ -1478,9 +1478,9 @@ class HF_ImpactBase : Actor
 class HF_ImpactIntensity
 {
 	// TODO(GlowInTheDark): dynamically adjust impact COLOR (and possibly
-	// intensity) from GlowInTheDark's parameters. Hook the GITD query in here
-	// so each impact tints to match the GITD lighting/value at the hit point.
-	// (User to explain GITD's parameters; wire color source here.)
+	// intensity) from GlowInTheDark's parameters. Hook the RADIANCE query in here
+	// so each impact tints to match the RADIANCE lighting/value at the hit point.
+	// (User to explain RADIANCE's parameters; wire color source here.)
 	static double Roll()
 	{
 		double mult = 1.0;

@@ -1,5 +1,5 @@
 // ============================================================================
-//  GITD_Buckshot -- the SHOTGUN weapon-signature score effect: "Buckshot".
+//  RADIANCE_Buckshot -- the SHOTGUN weapon-signature score effect: "Buckshot".
 //
 //  On a shotgun hit the score DETONATES into ~6-10 pellet-SHARDS that blast out
 //  of the wound in a CONE pointing along the shot (player -> monster), each shard
@@ -13,19 +13,19 @@
 //  choreography on the AddGlowPanel primitive (no engine change); shapes 14/15/17
 //  are the procedural neon SDFs added in the shader's wgType branch.
 //
-//  Entry point: GITD_Buckshot.Fire(mon, dmg, pn)  -- called from the combo
+//  Entry point: RADIANCE_Buckshot.Fire(mon, dmg, pn)  -- called from the combo
 //  handler when the damaging weapon maps to the SHOTGUN signature.
 //
-//  Cvar: gitd_buckshot_enabled (master on/off).
+//  Cvar: radiance_buckshot_enabled (master on/off).
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-//  GITD_BuckShard -- one pellet of the detonation. Flies a ballistic arc, and
+//  RADIANCE_BuckShard -- one pellet of the detonation. Flies a ballistic arc, and
 //  LineTraces from its last pos to its new pos each tic; on a world hit it snaps
 //  to the contact point, sticks flat to the surface (fixed orientation), and
 //  slow-fades. Shape 17 = the procedural shard SDF.
 // ----------------------------------------------------------------------------
-class GITD_BuckShard : Actor
+class RADIANCE_BuckShard : Actor
 {
 	int    slice;        // the score slice this shard carries (shown on the fragment)
 	int    life;
@@ -127,11 +127,11 @@ class GITD_BuckShard : Actor
 }
 
 // ----------------------------------------------------------------------------
-//  GITD_BuckSlam -- the payoff. Spawned at the wound, waits the blast delay,
+//  RADIANCE_BuckSlam -- the payoff. Spawned at the wound, waits the blast delay,
 //  then punches a SHOCKWAVE RING (14) + FILLED-DISC flash (15) and assembles the
 //  FULL TOTAL as a camera-facing number that converges in and rings, then fades.
 // ----------------------------------------------------------------------------
-class GITD_BuckSlam : Actor
+class RADIANCE_BuckSlam : Actor
 {
 	int    total;        // full hit score the shards summed to
 	int    delay;        // tics to wait before the slam (the shards' flight)
@@ -219,15 +219,15 @@ class GITD_BuckSlam : Actor
 }
 
 // ----------------------------------------------------------------------------
-//  GITD_Buckshot -- the static factory. Builds the cone, spawns the shards, and
+//  RADIANCE_Buckshot -- the static factory. Builds the cone, spawns the shards, and
 //  arms the slam. Call once per shotgun hit.
 // ----------------------------------------------------------------------------
-class GITD_Buckshot play
+class RADIANCE_Buckshot play
 {
 	static void Fire(Actor mon, int dmg, int pn)
 	{
 		if (!mon) return;
-		let en = CVar.FindCVar("gitd_buckshot_enabled");
+		let en = CVar.FindCVar("radiance_buckshot_enabled");
 		if (en && !en.GetBool()) return;
 		if (pn < 0 || pn >= MAXPLAYERS || !players[pn].mo) return;
 
@@ -296,7 +296,7 @@ class GITD_Buckshot play
 			}
 			double dl = dir.Length(); if (dl < 0.001) dl = 1.0; dir /= dl;
 
-			GITD_BuckShard sh = GITD_BuckShard(Actor.Spawn("GITD_BuckShard", wound));
+			RADIANCE_BuckShard sh = RADIANCE_BuckShard(Actor.Spawn("RADIANCE_BuckShard", wound));
 			if (!sh) continue;
 
 			double sp = speed * frandom[gbuck](0.82, 1.18);    // per-pellet speed variance
@@ -312,7 +312,7 @@ class GITD_Buckshot play
 		}
 
 		// --- arm the slam: fires the ring + disc + total after the shards' flight ---
-		GITD_BuckSlam slam = GITD_BuckSlam(Actor.Spawn("GITD_BuckSlam", wound));
+		RADIANCE_BuckSlam slam = RADIANCE_BuckSlam(Actor.Spawn("RADIANCE_BuckSlam", wound));
 		if (slam)
 		{
 			slam.total = dmg;

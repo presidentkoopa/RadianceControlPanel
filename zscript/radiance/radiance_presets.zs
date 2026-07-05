@@ -1,9 +1,9 @@
 // ============================================================================
-// GITD PRESETS - one-tap configurations that set DarkDoomZ + GlowInTheDark
+// RADIANCE PRESETS - one-tap configurations that set DarkDoomZ + GlowInTheDark
 // cvars together. Pick a preset in the menu -> it writes the whole batch.
 //
 // A preset is just "apply N cvar values at once." Driven by a netevent so it
-// works in-game (VR, no console). gitd_preset_apply <n>.
+// works in-game (VR, no console). radiance_preset_apply <n>.
 //
 // Presets:
 //   1  = BLACKOUT     -- pure-black DarkDoom; base glow OFF; only COMBAT lights
@@ -15,22 +15,22 @@
 //   21 = ATOMIC PILE       -- sickly green-yellow radioactive glow, slow heavy pulse.
 // ============================================================================
 //
-// ROLE IN GITD: This is the user-facing "front door" to the whole
+// ROLE IN RADIANCE: This is the user-facing "front door" to the whole
 // GlowInTheDark + DarkDoomZ tuning surface. Instead of expecting the player to
 // hand-tune ~25 individual cvars from a console (impossible in VR, where there
 // is no keyboard), this handler bundles a curated, internally-consistent set of
 // values behind a single menu action. The menu/keybind fires a ConsoleEvent
-// ("gitd_preset_apply <n>"); this EventHandler receives it and writes the batch.
+// ("radiance_preset_apply <n>"); this EventHandler receives it and writes the batch.
 // It owns no per-tick state and renders nothing - it is purely a cvar writer.
-class GITD_PresetHandler : EventHandler   // EventHandler so it can receive netevents map-wide
+class RADIANCE_PresetHandler : EventHandler   // EventHandler so it can receive netevents map-wide
 {
-    // Entry point: runs when a "gitd_preset_apply" ConsoleEvent fires (via the
+    // Entry point: runs when a "radiance_preset_apply" ConsoleEvent fires (via the
     // netevent console command / menu). NetworkProcess (not WorldTick) is used
     // so the apply is demo/multiplayer-safe and reaches every node consistently.
     override void NetworkProcess(ConsoleEvent e)
     {
         // Only react to our own event name; ignore every other netevent on the bus.
-        if (e.Name == "gitd_preset_apply")
+        if (e.Name == "radiance_preset_apply")
         {
             int which = e.Args[0];          // Arg0 selects which preset
             switch (which)
@@ -75,9 +75,9 @@ class GITD_PresetHandler : EventHandler   // EventHandler so it can receive nete
         SetI("ddz_postgain", 0);    // no post-tonemap brightening - keep blacks crushed
         SetI("ddz_fog",      0);    // fog off; fog would lift the blacks and wash out glow
 
-        // --- GITD BASE GLOW: OFF (no ambient floor/ceiling glow) ---
+        // --- RADIANCE BASE GLOW: OFF (no ambient floor/ceiling glow) ---
         // The whole point of BLACKOUT is that nothing glows passively - so the
-        // standing/ambient GITD glow channel is fully disabled here.
+        // standing/ambient RADIANCE glow channel is fully disabled here.
         SetI("hf_glow_enabled",    0);   // master ambient-glow switch off
         SetI("hf_glow_random",     0);   // no randomized glow placement
         SetI("hf_glow_cycle",      0);   // no glow color/intensity cycling
@@ -104,14 +104,14 @@ class GITD_PresetHandler : EventHandler   // EventHandler so it can receive nete
         // --- DEATH FX: ON, big (the void remembers kills) ---
         // Each kill stamps a death effect; with base glow off these become the
         // persistent landmarks in an otherwise black room.
-        SetI("gitd_death_enabled", 1);   // enable death-FX system
-        SetI("gitd_death_size",    320); // large mark so kills read at distance in the dark
-        SetI("gitd_death_walk",    1);   // mark stays tied to the floor / walkable surface
-        SetI("gitd_death_memory",  0);   // memory off: marks fade, no permanent battlefield buildup
+        SetI("radiance_death_enabled", 1);   // enable death-FX system
+        SetI("radiance_death_size",    320); // large mark so kills read at distance in the dark
+        SetI("radiance_death_walk",    1);   // mark stays tied to the floor / walkable surface
+        SetI("radiance_death_memory",  0);   // memory off: marks fade, no permanent battlefield buildup
 
         // Cyan notice: confirms the apply and flags that DarkDoom's darkest modes
         // typically need a map restart to fully re-light all sectors from scratch.
-        Console.Printf("\c[Cyan]GITD: BLACKOUT preset applied. Restart map for full darkness.");
+        Console.Printf("\c[Cyan]RADIANCE: BLACKOUT preset applied. Restart map for full darkness.");
     }
 
     // Shared baseline for the glow-on presets: master glow on, every surface, no
@@ -120,7 +120,7 @@ class GITD_PresetHandler : EventHandler   // EventHandler so it can receive nete
     void GlowBase()
     {
         SetI("hf_glow_enabled",     1);
-        SetI("gitd_surfaces",       7);     // floor + ceiling + walls
+        SetI("radiance_surfaces",       7);     // floor + ceiling + walls
         SetI("hf_glow_random",      0);
         SetI("hf_glow_random_mode", 0);
         SetI("hf_glow_random_rate", 0);
@@ -134,21 +134,21 @@ class GITD_PresetHandler : EventHandler   // EventHandler so it can receive nete
         SetI("ddz_fog",             0);
 
         // Reset independent plane parameters
-        SetI("gitd_floor_enabled",   1);
-        SetI("gitd_ceil_enabled",    1);
-        SetI("gitd_wall_enabled",    1);
-        SetF("gitd_floor_intensity", 1.0);
-        SetF("gitd_ceil_intensity",  1.0);
-        SetF("gitd_wall_intensity",  1.0);
-        SetF("gitd_floor_height",    64.0);
-        SetF("gitd_ceil_height",     64.0);
-        SetF("gitd_wall_height",     64.0);
-        SetI("gitd_floor_mode",      0);
-        SetI("gitd_ceil_mode",       0);
-        SetI("gitd_wall_mode",       0);
-        SetF("gitd_floor_speed",     1.0);
-        SetF("gitd_ceil_speed",      1.0);
-        SetF("gitd_wall_speed",      1.0);
+        SetI("radiance_floor_enabled",   1);
+        SetI("radiance_ceil_enabled",    1);
+        SetI("radiance_wall_enabled",    1);
+        SetF("radiance_floor_intensity", 1.0);
+        SetF("radiance_ceil_intensity",  1.0);
+        SetF("radiance_wall_intensity",  1.0);
+        SetF("radiance_floor_height",    64.0);
+        SetF("radiance_ceil_height",     64.0);
+        SetF("radiance_wall_height",     64.0);
+        SetI("radiance_floor_mode",      0);
+        SetI("radiance_ceil_mode",       0);
+        SetI("radiance_wall_mode",       0);
+        SetF("radiance_floor_speed",     1.0);
+        SetF("radiance_ceil_speed",      1.0);
+        SetF("radiance_wall_speed",      1.0);
     }
 
     // One unified complementary color pair on planes, gently pulsing.
@@ -166,16 +166,16 @@ class GITD_PresetHandler : EventHandler   // EventHandler so it can receive nete
             col = 0x39FF14; // neon green
         }
 
-        SetI("gitd_floor_color",    col);
-        SetI("gitd_ceil_color",     col);
-        SetI("gitd_wall_color",     col);
-        SetI("gitd_floor_mode",     5);          // cycle
-        SetI("gitd_ceil_mode",      5);
-        SetI("gitd_wall_mode",      5);
-        SetF("gitd_floor_speed",    0.1);       // very slow relaxing cycling
-        SetF("gitd_ceil_speed",     0.1);
-        SetF("gitd_wall_speed",     0.1);
-        Console.Printf("\c[Cyan]GITD: Neon Unison.");
+        SetI("radiance_floor_color",    col);
+        SetI("radiance_ceil_color",     col);
+        SetI("radiance_wall_color",     col);
+        SetI("radiance_floor_mode",     5);          // cycle
+        SetI("radiance_ceil_mode",      5);
+        SetI("radiance_wall_mode",      5);
+        SetF("radiance_floor_speed",    0.1);       // very slow relaxing cycling
+        SetF("radiance_ceil_speed",     0.1);
+        SetF("radiance_wall_speed",     0.1);
+        Console.Printf("\c[Cyan]RADIANCE: Neon Unison.");
     }
 
     // Every room its own wild colour, breathing over time.
@@ -187,7 +187,7 @@ class GITD_PresetHandler : EventHandler   // EventHandler so it can receive nete
         SetI("hf_glow_random_mode", 0);          // vivid, any hue
         SetI("hf_glow_random_rate", 70);         // re-roll ~2s = shifting chaos
         SetI("hf_glow_mode",        2);          // breathe cycle
-        Console.Printf("\c[Cyan]GITD: Neon Chaos.");
+        Console.Printf("\c[Cyan]RADIANCE: Neon Chaos.");
     }
 
     // The whole arena throbs alarm-red.
@@ -195,19 +195,19 @@ class GITD_PresetHandler : EventHandler   // EventHandler so it can receive nete
     {
         GlowBase();
         SetI("ddz_preset",          4);          // darker, tense
-        SetI("gitd_floor_color",    0xFF1818);   // alarm red
-        SetI("gitd_ceil_color",     0xFF1818);
-        SetI("gitd_wall_color",     0xFF1818);
-        SetI("gitd_floor_mode",     2);          // breathe
-        SetI("gitd_ceil_mode",      2);
-        SetI("gitd_wall_mode",      2);
-        SetF("gitd_floor_speed",    0.3);        // slow dramatic breath
-        SetF("gitd_ceil_speed",     0.3);
-        SetF("gitd_wall_speed",     0.3);
-        SetF("gitd_floor_intensity", 1.2);
-        SetF("gitd_ceil_intensity",  1.2);
-        SetF("gitd_wall_intensity",  1.2);
-        Console.Printf("\c[Cyan]GITD: Red Alert.");
+        SetI("radiance_floor_color",    0xFF1818);   // alarm red
+        SetI("radiance_ceil_color",     0xFF1818);
+        SetI("radiance_wall_color",     0xFF1818);
+        SetI("radiance_floor_mode",     2);          // breathe
+        SetI("radiance_ceil_mode",      2);
+        SetI("radiance_wall_mode",      2);
+        SetF("radiance_floor_speed",    0.3);        // slow dramatic breath
+        SetF("radiance_ceil_speed",     0.3);
+        SetF("radiance_wall_speed",     0.3);
+        SetF("radiance_floor_intensity", 1.2);
+        SetF("radiance_ceil_intensity",  1.2);
+        SetF("radiance_wall_intensity",  1.2);
+        Console.Printf("\c[Cyan]RADIANCE: Red Alert.");
     }
 
     // Deep-blue floors fading up to icy-white ceilings, slow and frosty.
@@ -215,16 +215,16 @@ class GITD_PresetHandler : EventHandler   // EventHandler so it can receive nete
     {
         GlowBase();
         SetI("ddz_preset",          3);
-        SetI("gitd_floor_color",    0x1840FF);   // deep blue floor
-        SetI("gitd_ceil_color",     0xC8E6FF);   // icy white ceiling
-        SetI("gitd_wall_color",     0x1840FF);   // deep blue walls
-        SetI("gitd_floor_mode",     2);          // slow breathe
-        SetI("gitd_ceil_mode",      2);
-        SetI("gitd_wall_mode",      2);
-        SetF("gitd_floor_speed",    0.5);
-        SetF("gitd_ceil_speed",     0.5);
-        SetF("gitd_wall_speed",     0.5);
-        Console.Printf("\c[Cyan]GITD: Cold Front.");
+        SetI("radiance_floor_color",    0x1840FF);   // deep blue floor
+        SetI("radiance_ceil_color",     0xC8E6FF);   // icy white ceiling
+        SetI("radiance_wall_color",     0x1840FF);   // deep blue walls
+        SetI("radiance_floor_mode",     2);          // slow breathe
+        SetI("radiance_ceil_mode",      2);
+        SetI("radiance_wall_mode",      2);
+        SetF("radiance_floor_speed",    0.5);
+        SetF("radiance_ceil_speed",     0.5);
+        SetF("radiance_wall_speed",     0.5);
+        Console.Printf("\c[Cyan]RADIANCE: Cold Front.");
     }
 
     // Atomic Pile: sickly green-yellow radioactive floor & walls, dull olive
@@ -234,17 +234,17 @@ class GITD_PresetHandler : EventHandler   // EventHandler so it can receive nete
     {
         GlowBase();
         SetI("ddz_preset",          4);          // darker canvas, radioactive glow reads hot
-        SetI("gitd_floor_color",    0x9ACD00);   // radioactive green-yellow
-        SetI("gitd_ceil_color",     0x4B5A00);   // dull olive ceiling
-        SetI("gitd_wall_color",     0x9ACD00);   // radioactive green-yellow
-        SetI("gitd_floor_mode",     1);          // pulse
-        SetI("gitd_ceil_mode",      2);          // breathe
-        SetI("gitd_wall_mode",      1);          // pulse
-        SetF("gitd_floor_speed",    0.35);       // slow, heavy
-        SetF("gitd_ceil_speed",     0.25);
-        SetF("gitd_wall_speed",     0.35);
-        SetF("gitd_floor_intensity", 1.3);
-        SetF("gitd_wall_intensity",  1.3);
-        Console.Printf("\c[Green]GITD: Atomic Pile.");
+        SetI("radiance_floor_color",    0x9ACD00);   // radioactive green-yellow
+        SetI("radiance_ceil_color",     0x4B5A00);   // dull olive ceiling
+        SetI("radiance_wall_color",     0x9ACD00);   // radioactive green-yellow
+        SetI("radiance_floor_mode",     1);          // pulse
+        SetI("radiance_ceil_mode",      2);          // breathe
+        SetI("radiance_wall_mode",      1);          // pulse
+        SetF("radiance_floor_speed",    0.35);       // slow, heavy
+        SetF("radiance_ceil_speed",     0.25);
+        SetF("radiance_wall_speed",     0.35);
+        SetF("radiance_floor_intensity", 1.3);
+        SetF("radiance_wall_intensity",  1.3);
+        Console.Printf("\c[Green]RADIANCE: Atomic Pile.");
     }
 }

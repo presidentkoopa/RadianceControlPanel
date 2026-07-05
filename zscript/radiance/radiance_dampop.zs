@@ -1,14 +1,14 @@
 // ============================================================================
-//  GITD_DamPop -- a per-HIT neon damage number. One spawns every time the
+//  RADIANCE_DamPop -- a per-HIT neon damage number. One spawns every time the
 //  player damages a monster, launches up-and-out from the body, arcs, and
 //  fades. Rapid fire => dozens flying across the view: the arcade storm.
 //  Camera-facing so each pop stays readable as it flies. Pure choreography on
 //  the glow-panel primitive.
 //
 //  NOTE: the launch speed / lifetime / size below are PLACEHOLDER feel values
-//  for the user to dial -- not tuned. (gitd_dampop_enabled gates the whole thing.)
+//  for the user to dial -- not tuned. (radiance_dampop_enabled gates the whole thing.)
 // ============================================================================
-class GITD_DamPop : Actor
+class RADIANCE_DamPop : Actor
 {
 	int dmg;
 	int life;
@@ -20,14 +20,14 @@ class GITD_DamPop : Actor
 
 	static void Fire(Vector3 at, int damage)
 	{
-		let p = GITD_DamPop(Spawn("GITD_DamPop", at));
+		let p = RADIANCE_DamPop(Spawn("RADIANCE_DamPop", at));
 		if (!p) return;
 		p.dmg = damage;
 		p.life = 0;
 		// jumpy up-and-out spread
 		p.pvel = (frandom(-1.2, 1.2), frandom(-1.2, 1.2), frandom(3.0, 5.5));
 		
-		CVar cc = CVar.FindCVar("gitd_damage_numbers_color");
+		CVar cc = CVar.FindCVar("radiance_damage_numbers_color");
 		p.col = cc ? Color(cc.GetInt()) : Color(255, 255, 240, 190);
 	}
 

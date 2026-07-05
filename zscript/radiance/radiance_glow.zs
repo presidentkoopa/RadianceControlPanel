@@ -22,12 +22,12 @@
 // ============================================================================
 //
 // ----------------------------------------------------------------------------
-// ROLE IN GITD: This is the runtime heart of the GlowInTheDark (GITD) mod's
+// ROLE IN RADIANCE: This is the runtime heart of the GlowInTheDark (RADIANCE) mod's
 // "ambient glow" pillar. Two cooperating pieces live here:
 //   1) HF_GlowHandler (an EventHandler) -- the global per-tick driver that
 //      colours every sector's floor/ceiling glow, runs the killstreak "heat"
 //      red-floor effect, and draws the streak HUD. It uses the native GLOW
-//      surface-gradient channel (SetGlowColor/SetGlowHeight) -- the GITD hard
+//      surface-gradient channel (SetGlowColor/SetGlowHeight) -- the RADIANCE hard
 //      rule is ZERO dynamic lights for the ambient glow; GLOW is the mechanism.
 //   2) HF_ImpactRipple (an Actor) -- a per-hit, expanding/collapsing light
 //      pulse spawned at projectile impacts. NOTE: this one deliberately uses
@@ -62,8 +62,8 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 	override void WorldLoaded(WorldEvent e)
 	{
 		// Clean up persistent vaporwave colors if they are set as startup defaults
-		CVar cfl = CVar.FindCVar("gitd_floor_color");
-		CVar ccl = CVar.FindCVar("gitd_ceil_color");
+		CVar cfl = CVar.FindCVar("radiance_floor_color");
+		CVar ccl = CVar.FindCVar("radiance_ceil_color");
 		if (cfl && ccl)
 		{
 			int flColor = cfl.GetInt();
@@ -132,7 +132,7 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 		// Mix the three inputs with distinct large primes so sector/salt/epoch
 		// each perturb the seed independently (no accidental collisions).
 		int seed = sectorIndex * 2654435761 + salt * 40503 + epoch * 19349663;
-		// [GITD] room-to-room variety MODE (hf_glow_random_mode): 0 vivid (any hue),
+		// [RADIANCE] room-to-room variety MODE (hf_glow_random_mode): 0 vivid (any hue),
 		// 1 curated neon palette, 2 hue-drift across sector index (cohesive sweep),
 		// 3 complementary floor/ceiling pair. Default 0 keeps the original behaviour.
 		int rmode = CI("hf_glow_random_mode", 0);
@@ -145,7 +145,7 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 			// designed, not noise. The sector hash picks which entry of the palette.
 			int pal = CI("hf_glow_random_palette", 0);
 			int idx = int(HF_Hash01(seed) * 6.0);
-			h   = GITD_PaletteHue(pal, idx);
+			h   = RADIANCE_PaletteHue(pal, idx);
 			sat = 0.80 + 0.20 * HF_Hash01(seed + 7);
 			val = 0.85 + 0.15 * HF_Hash01(seed + 13);
 		}
@@ -185,9 +185,9 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 		return Color(255, ir, ig, ib);
 	}
 
-	// [GITD] Curated neon hue palettes (degrees). Each palette = 6 vivid HF hues,
+	// [RADIANCE] Curated neon hue palettes (degrees). Each palette = 6 vivid HF hues,
 	// selected by hf_glow_random_palette. ZScript has no array literals, so switched.
-	static double GITD_PaletteHue(int pal, int idx)
+	static double RADIANCE_PaletteHue(int pal, int idx)
 	{
 		int i = idx % 6; if (i < 0) i += 6;
 		if (pal == 1)   // acid -- greens / limes
@@ -468,9 +468,9 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 	// active mode plus the cycle / gradient / split / randomize / liquid options.
 	void ApplyGlow(int mode)
 	{
-		double floorInten = GetPlaneIntensity(CF("gitd_floor_intensity", 1.0), CI("gitd_floor_mode", 0), level.maptime * 0.015 * CF("gitd_floor_speed", 1.0));
-		double ceilInten  = GetPlaneIntensity(CF("gitd_ceil_intensity", 1.0),  CI("gitd_ceil_mode", 0),  level.maptime * 0.015 * CF("gitd_ceil_speed", 1.0));
-		double wallInten  = GetPlaneIntensity(CF("gitd_wall_intensity", 1.0),  CI("gitd_wall_mode", 0),  level.maptime * 0.015 * CF("gitd_wall_speed", 1.0));
+		double floorInten = GetPlaneIntensity(CF("radiance_floor_intensity", 1.0), CI("radiance_floor_mode", 0), level.maptime * 0.015 * CF("radiance_floor_speed", 1.0));
+		double ceilInten  = GetPlaneIntensity(CF("radiance_ceil_intensity", 1.0),  CI("radiance_ceil_mode", 0),  level.maptime * 0.015 * CF("radiance_ceil_speed", 1.0));
+		double wallInten  = GetPlaneIntensity(CF("radiance_wall_intensity", 1.0),  CI("radiance_wall_mode", 0),  level.maptime * 0.015 * CF("radiance_wall_speed", 1.0));
 
 		floorInten = clamp(floorInten, 0.0, 2.0);
 		ceilInten  = clamp(ceilInten, 0.0, 2.0);
@@ -478,15 +478,15 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 
 		// primary colors unpack
 		int fR = 255, fG = 176, fB = 40; // Default warm amber
-		CVar cfl = CVar.FindCVar("gitd_floor_color");
+		CVar cfl = CVar.FindCVar("radiance_floor_color");
 		if (cfl) { int pk = cfl.GetInt(); fR = (pk >> 16) & 0xFF; fG = (pk >> 8) & 0xFF; fB = pk & 0xFF; }
 
 		int cR = 48, cG = 48, cB = 48; // Default minimal slate grey
-		CVar ccl = CVar.FindCVar("gitd_ceil_color");
+		CVar ccl = CVar.FindCVar("radiance_ceil_color");
 		if (ccl) { int pk = ccl.GetInt(); cR = (pk >> 16) & 0xFF; cG = (pk >> 8) & 0xFF; cB = pk & 0xFF; }
 
 		int wR = 255, wG = 176, wB = 40; // Default warm amber
-		CVar cwl = CVar.FindCVar("gitd_wall_color");
+		CVar cwl = CVar.FindCVar("radiance_wall_color");
 		if (cwl) { int pk = cwl.GetInt(); wR = (pk >> 16) & 0xFF; wG = (pk >> 8) & 0xFF; wB = pk & 0xFF; }
 
 		// Legacy fallbacks / compatibility
@@ -539,21 +539,21 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 			// --- Floor / Lower Wall Color & Height ---
 			color colFloor;
 			double hFloor = 0.0;
-			if (CB("gitd_floor_enabled", true))
+			if (CB("radiance_floor_enabled", true))
 			{
-				if (CI("gitd_floor_mode", 0) == 4) // Rainbow Cycle
+				if (CI("radiance_floor_mode", 0) == 4) // Rainbow Cycle
 				{
-					double h = (level.maptime * CF("gitd_floor_speed", 1.0) * 4.0);
+					double h = (level.maptime * CF("radiance_floor_speed", 1.0) * 4.0);
 					h -= 360.0 * floor(h / 360.0);
 					double r, g, b;
 					[r, g, b] = HF_HSV2RGB(h, 0.95, 0.95);
 					colFloor = Color(255, int(r * 255.0 * floorInten), int(g * 255.0 * floorInten), int(b * 255.0 * floorInten));
 				}
-				else if (CI("gitd_floor_mode", 0) == 5) // Cycle
+				else if (CI("radiance_floor_mode", 0) == 5) // Cycle
 				{
 					double h, s, v;
 					[h, s, v] = HF_RGB2HSV(fR / 255.0, fG / 255.0, fB / 255.0);
-					double shift = (level.maptime * CF("gitd_floor_speed", 1.0) * 4.0);
+					double shift = (level.maptime * CF("radiance_floor_speed", 1.0) * 4.0);
 					h += shift;
 					h -= 360.0 * floor(h / 360.0);
 					double r, g, b;
@@ -572,24 +572,24 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 				{
 					colFloor = Color(255, int(clamp(fR * floorInten, 0, 255)), int(clamp(fG * floorInten, 0, 255)), int(clamp(fB * floorInten, 0, 255)));
 				}
-				hFloor = CF("gitd_floor_height", 64.0);
+				hFloor = CF("radiance_floor_height", 64.0);
 			}
-			else if (CB("gitd_wall_enabled", true))
+			else if (CB("radiance_wall_enabled", true))
 			{
 				// Fallback to Wall color so lower walls still glow
-				if (CI("gitd_wall_mode", 0) == 4) // Rainbow Cycle
+				if (CI("radiance_wall_mode", 0) == 4) // Rainbow Cycle
 				{
-					double h = (level.maptime * CF("gitd_wall_speed", 1.0) * 4.0);
+					double h = (level.maptime * CF("radiance_wall_speed", 1.0) * 4.0);
 					h -= 360.0 * floor(h / 360.0);
 					double r, g, b;
 					[r, g, b] = HF_HSV2RGB(h, 0.95, 0.95);
 					colFloor = Color(255, int(r * 255.0 * wallInten), int(g * 255.0 * wallInten), int(b * 255.0 * wallInten));
 				}
-				else if (CI("gitd_wall_mode", 0) == 5) // Cycle
+				else if (CI("radiance_wall_mode", 0) == 5) // Cycle
 				{
 					double h, s, v;
 					[h, s, v] = HF_RGB2HSV(wR / 255.0, wG / 255.0, wB / 255.0);
-					double shift = (level.maptime * CF("gitd_wall_speed", 1.0) * 4.0);
+					double shift = (level.maptime * CF("radiance_wall_speed", 1.0) * 4.0);
 					h += shift;
 					h -= 360.0 * floor(h / 360.0);
 					double r, g, b;
@@ -600,35 +600,35 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 				{
 					colFloor = Color(255, int(clamp(wR * wallInten, 0, 255)), int(clamp(wG * wallInten, 0, 255)), int(clamp(wB * wallInten, 0, 255)));
 				}
-				hFloor = CF("gitd_wall_height", 64.0);
+				hFloor = CF("radiance_wall_height", 64.0);
 			}
 
 			// --- Ceiling / Upper Wall Color & Height ---
 			color colCeil;
 			double hCeil = 0.0;
-			if (CB("gitd_ceil_enabled", true))
+			if (CB("radiance_ceil_enabled", true))
 			{
-				if (CI("gitd_ceil_mode", 0) == 4) // Rainbow Cycle
+				if (CI("radiance_ceil_mode", 0) == 4) // Rainbow Cycle
 				{
-					double h = (level.maptime * CF("gitd_ceil_speed", 1.0) * 4.0);
+					double h = (level.maptime * CF("radiance_ceil_speed", 1.0) * 4.0);
 					h -= 360.0 * floor(h / 360.0);
 					double r, g, b;
 					[r, g, b] = HF_HSV2RGB(h, 0.95, 0.95);
 					colCeil = Color(255, int(r * 255.0 * ceilInten), int(g * 255.0 * ceilInten), int(b * 255.0 * ceilInten));
 				}
-				else if (CI("gitd_ceil_mode", 0) == 5) // Cycle
+				else if (CI("radiance_ceil_mode", 0) == 5) // Cycle
 				{
 					double h, s, v;
-					if (CI("gitd_floor_mode", 0) == 5)
+					if (CI("radiance_floor_mode", 0) == 5)
 					{
 						[h, s, v] = HF_RGB2HSV(fR / 255.0, fG / 255.0, fB / 255.0);
-						double shift = (level.maptime * CF("gitd_floor_speed", 1.0) * 4.0);
+						double shift = (level.maptime * CF("radiance_floor_speed", 1.0) * 4.0);
 						h += shift + 180.0; // Perfect complementary offset
 					}
 					else
 					{
 						[h, s, v] = HF_RGB2HSV(cR / 255.0, cG / 255.0, cB / 255.0);
-						double shift = (level.maptime * CF("gitd_ceil_speed", 1.0) * 4.0);
+						double shift = (level.maptime * CF("radiance_ceil_speed", 1.0) * 4.0);
 						h += shift;
 					}
 					h -= 360.0 * floor(h / 360.0);
@@ -644,32 +644,32 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 				{
 					colCeil = Color(255, int(clamp(cR * ceilInten, 0, 255)), int(clamp(cG * ceilInten, 0, 255)), int(clamp(cB * ceilInten, 0, 255)));
 				}
-				hCeil = CF("gitd_ceil_height", 64.0);
+				hCeil = CF("radiance_ceil_height", 64.0);
 			}
-			else if (CB("gitd_wall_enabled", true))
+			else if (CB("radiance_wall_enabled", true))
 			{
 				// Fallback to Wall color so upper walls still glow
-				if (CI("gitd_wall_mode", 0) == 4) // Rainbow Cycle
+				if (CI("radiance_wall_mode", 0) == 4) // Rainbow Cycle
 				{
-					double h = (level.maptime * CF("gitd_wall_speed", 1.0) * 4.0);
+					double h = (level.maptime * CF("radiance_wall_speed", 1.0) * 4.0);
 					h -= 360.0 * floor(h / 360.0);
 					double r, g, b;
 					[r, g, b] = HF_HSV2RGB(h, 0.95, 0.95);
 					colCeil = Color(255, int(r * 255.0 * wallInten), int(g * 255.0 * wallInten), int(b * 255.0 * wallInten));
 				}
-				else if (CI("gitd_wall_mode", 0) == 5) // Cycle
+				else if (CI("radiance_wall_mode", 0) == 5) // Cycle
 				{
 					double h, s, v;
-					if (CI("gitd_floor_mode", 0) == 5)
+					if (CI("radiance_floor_mode", 0) == 5)
 					{
 						[h, s, v] = HF_RGB2HSV(fR / 255.0, fG / 255.0, fB / 255.0);
-						double shift = (level.maptime * CF("gitd_floor_speed", 1.0) * 4.0);
+						double shift = (level.maptime * CF("radiance_floor_speed", 1.0) * 4.0);
 						h += shift + 180.0;
 					}
 					else
 					{
 						[h, s, v] = HF_RGB2HSV(wR / 255.0, wG / 255.0, wB / 255.0);
-						double shift = (level.maptime * CF("gitd_wall_speed", 1.0) * 4.0);
+						double shift = (level.maptime * CF("radiance_wall_speed", 1.0) * 4.0);
 						h += shift;
 					}
 					h -= 360.0 * floor(h / 360.0);
@@ -681,7 +681,7 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 				{
 					colCeil = Color(255, int(clamp(wR * wallInten, 0, 255)), int(clamp(wG * wallInten, 0, 255)), int(clamp(wB * wallInten, 0, 255)));
 				}
-				hCeil = CF("gitd_wall_height", 64.0);
+				hCeil = CF("radiance_wall_height", 64.0);
 			}
 
 			finalFloorColors[i] = colFloor;
@@ -691,9 +691,9 @@ class HF_GlowHandler : EventHandler   // Global event handler: drives ambient gl
 		}
 
 		// --- Sector Color Blending (Fluid Bleed) ---
-		if (CB("gitd_blend_enabled", false))
+		if (CB("radiance_blend_enabled", false))
 		{
-			double blendRate = CF("gitd_blend_rate", 0.15);
+			double blendRate = CF("radiance_blend_rate", 0.15);
 			blendRate = clamp(blendRate, 0.0, 1.0);
 
 			Array<color> blendedFloor;
@@ -1005,7 +1005,7 @@ class HF_ImpactRipple : Actor   // Transient per-impact light pulse spawned at p
 	static double HF_RippleCVarF(String n, double def) { CVar c = CVar.FindCVar(n); return c ? c.GetFloat() : def; }
 }
 
-class GITD_ScannedMarker : Inventory
+class RADIANCE_ScannedMarker : Inventory
 {
 	color scannedColor;
 	Default

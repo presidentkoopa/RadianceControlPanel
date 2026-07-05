@@ -26,53 +26,53 @@ class RadianceControlHandler : EventHandler
     {
         switch(p)
         {
-            case 1: // Classic GITD (Amber Pulse)
-                SetCVarBool("gitd_glow_enabled", true);
+            case 1: // Classic RADIANCE (Amber Pulse)
+                SetCVarBool("radiance_glow_enabled", true);
                 SetCVarInt("vr_visual_regime", 0);
-                SetCVarColor("gitd_floor_color", "ff b0 28");
-                SetCVarColor("gitd_ceil_color", "30 30 30");
-                SetCVarFloat("gitd_floor_intensity", 1.2);
-                SetCVarInt("gitd_floor_mode", 1); // Pulse
-                SetCVarFloat("gitd_bloom_strength", 1.0);
-                SetCVarFloat("gitd_bloomboost_contrast", 140.0);
+                SetCVarColor("radiance_floor_color", "ff b0 28");
+                SetCVarColor("radiance_ceil_color", "30 30 30");
+                SetCVarFloat("radiance_floor_intensity", 1.2);
+                SetCVarInt("radiance_floor_mode", 1); // Pulse
+                SetCVarFloat("radiance_bloom_strength", 1.0);
+                SetCVarFloat("radiance_bloomboost_contrast", 140.0);
                 break;
 
             case 2: // Matrix Overdrive (Neon Green)
-                SetCVarBool("gitd_glow_enabled", true);
+                SetCVarBool("radiance_glow_enabled", true);
                 SetCVarInt("vr_visual_regime", 1); // System Shock (Vector)
-                SetCVarColor("gitd_floor_color", "00 ff 33");
-                SetCVarColor("gitd_ceil_color", "00 44 11");
-                SetCVarColor("gitd_wall_color", "00 ff 33");
-                SetCVarFloat("gitd_bloom_strength", 1.8);
-                SetCVarFloat("gitd_bloomboost_contrast", 180.0);
+                SetCVarColor("radiance_floor_color", "00 ff 33");
+                SetCVarColor("radiance_ceil_color", "00 44 11");
+                SetCVarColor("radiance_wall_color", "00 ff 33");
+                SetCVarFloat("radiance_bloom_strength", 1.8);
+                SetCVarFloat("radiance_bloomboost_contrast", 180.0);
                 SetCVarFloat("vr_regime_speed", 1.5);
                 break;
 
             case 3: // Digital Abyss (Tron Blue)
-                SetCVarBool("gitd_glow_enabled", true);
+                SetCVarBool("radiance_glow_enabled", true);
                 SetCVarInt("vr_visual_regime", 2); // Tron (Grid)
-                SetCVarColor("gitd_floor_color", "00 88 ff");
-                SetCVarColor("gitd_ceil_color", "00 11 44");
-                SetCVarFloat("gitd_bloom_strength", 1.4);
-                SetCVarFloat("gitd_bloomboost_contrast", 160.0);
+                SetCVarColor("radiance_floor_color", "00 88 ff");
+                SetCVarColor("radiance_ceil_color", "00 11 44");
+                SetCVarFloat("radiance_bloom_strength", 1.4);
+                SetCVarFloat("radiance_bloomboost_contrast", 160.0);
                 break;
 
             case 4: // Dead Channel (Noir Grayscale)
-                SetCVarBool("gitd_glow_enabled", true);
+                SetCVarBool("radiance_glow_enabled", true);
                 SetCVarInt("vr_visual_regime", 5); // Digital Noir
-                SetCVarColor("gitd_floor_color", "44 44 44");
-                SetCVarColor("gitd_ceil_color", "11 11 11");
-                SetCVarFloat("gitd_bloom_strength", 1.0);
-                SetCVarFloat("gitd_bloomboost_contrast", 200.0);
+                SetCVarColor("radiance_floor_color", "44 44 44");
+                SetCVarColor("radiance_ceil_color", "11 11 11");
+                SetCVarFloat("radiance_bloom_strength", 1.0);
+                SetCVarFloat("radiance_bloomboost_contrast", 200.0);
                 break;
 
             case 5: // Predator Mode (Thermal)
-                SetCVarBool("gitd_glow_enabled", true);
+                SetCVarBool("radiance_glow_enabled", true);
                 SetCVarInt("vr_visual_regime", 4); // Thermal
-                SetCVarColor("gitd_floor_color", "ff 22 00");
-                SetCVarColor("gitd_ceil_color", "00 00 66");
-                SetCVarFloat("gitd_bloom_strength", 0.8);
-                SetCVarInt("gitd_flashlight_mode", 1); // Thermal Trace
+                SetCVarColor("radiance_floor_color", "ff 22 00");
+                SetCVarColor("radiance_ceil_color", "00 00 66");
+                SetCVarFloat("radiance_bloom_strength", 0.8);
+                SetCVarInt("radiance_flashlight_mode", 1); // Thermal Trace
                 break;
         }
     }
