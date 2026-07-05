@@ -61,8 +61,16 @@ class VRDamageHandler : StaticEventHandler
 
     override void WorldThingDamaged(WorldEvent e)
     {
+        // [XR] Wire the menu toggle (was unwired -> counters always drew = menu lie). The cumulative
+        // gold counter is the "Cumulative Tracking" option: radiance_damage_numbers_mode 2. Anything else
+        // (0=Off, 1=Per-Shot) -> no counter. Also honor the engine toggle vr_show_damage_numbers.
+        let _dnm = CVar.FindCVar("radiance_damage_numbers_mode");
+        if (!_dnm || _dnm.GetInt() != 2) return;
+        let _eng = CVar.FindCVar("vr_show_damage_numbers");
+        if (_eng && !_eng.GetBool()) return;
+
         if (!e.Thing || e.Damage <= 0) return;
-        
+
         // Only show for monsters or players
         if (!(e.Thing.bIsMonster || e.Thing.player)) return;
 
