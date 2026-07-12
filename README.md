@@ -1,8 +1,6 @@
 # Radiance Control Panel
 
-The **RADIANCE ("Glow In The Dark")** visual layer for the DoomXR VR engine, shipped as a standalone mod that loads on top of the engine.
-
-It provides the "party": the glow-in-the-dark glow-spots on walls/floors/ceilings, neon in-air display panels (score/damage readouts, gauges, oscilloscope, skull, lightning), hit-reaction FX, and the full-screen visual **regimes** (Tron, Thermal, System Shock, Blueprint, LSD, and more).
+The glow-in-the-dark glow-spots on walls/floors/ceilings, neon in-air display panels (score/damage readouts, gauges, oscilloscope, skull, lightning), hit-reaction FX, and the full-screen visual **regimes** (Tron, Thermal, System Shock, Blueprint, LSD, and more).
 
 ## How it works
 
